@@ -9,22 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
+            $table->id(); // <--- WAJIB INI (Agar jadi BigInteger Unsigned)
             
-            $table->id('id_produk'); 
-            $table->unsignedBigInteger('id_penjual'); 
+            $table->string('nama_barang');
+            $table->text('deskripsi')->nullable();
+            $table->decimal('harga', 15, 2);
+            $table->integer('stok');
+            $table->string('kategori')->nullable();
+            $table->string('url_gambar')->nullable();
+            $table->string('status')->default('aktif');
             
-            $table->string('nama_barang');  
-            $table->text('deskripsi');  
-            $table->decimal('harga', 10, 2); 
-            $table->integer('stok'); 
-            $table->string('kategori'); 
-            $table->string('url_gambar')->nullable(); 
-            
-            
-            $table->enum('status', ['Aktif', 'Arsip'])->default('Aktif');
-            
-            $table->softDeletes(); 
-            $table->timestamps(); 
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
