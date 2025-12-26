@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('full_name')->nullable();
             // Role default adalah user biasa
-            $table->enum('role', ['admin', 'staff', 'user'])->default('user');
+            $table->enum('role', ['admin', 'penjual', 'user'])->default('user');
             $table->timestamp('last_synced')->useCurrent();
             $table->timestamps();
         });

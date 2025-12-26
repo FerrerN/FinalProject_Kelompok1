@@ -17,17 +17,16 @@ class UserManagementController extends Controller
     // Simulasi tombol "Sync" untuk menarik data dari API External
     public function sync()
     {
-        // CERITANYA: Ini data yang didapat dari API External (Firebase/Auth0)
-        // Nanti diganti dengan request API beneran
-        $dummyExternalData = [
-            ['uid' => 'EXT-881', 'email' => 'admin.utama@example.com', 'name' => 'Budi Santoso'],
-            ['uid' => 'EXT-882', 'email' => 'staff.gudang@example.com', 'name' => 'Siti Aminah'],
-            ['uid' => 'EXT-883', 'email' => 'member.baru@example.com', 'name' => 'Joko Widodo'],
+        // Data Dummy disesuaikan
+        $externalData = [
+            ['uid' => 'EXT-101', 'email' => 'admin@toko.com', 'name' => 'Budi Admin'],
+            ['uid' => 'EXT-102', 'email' => 'siti@seller.com', 'name' => 'Siti Penjual'], 
+            ['uid' => 'EXT-103', 'email' => 'joko@pembeli.com', 'name' => 'Joko User'],
         ];
 
-        foreach ($dummyExternalData as $data) {
+        foreach ($externalData as $data) {
             UserMapping::updateOrCreate(
-                ['external_uid' => $data['uid']], // Kunci pencarian
+                ['external_uid' => $data['uid']],
                 [
                     'email' => $data['email'],
                     'full_name' => $data['name'],
@@ -36,7 +35,7 @@ class UserManagementController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', 'Sinkronisasi Data Berhasil!');
+        return redirect()->back()->with('success', 'Sinkronisasi berhasil!');
     }
 
     // Update Role User
