@@ -5,14 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller; // <--- TAMBAHKAN BARIS INI (SOLUSI ERROR BARIS 9)
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth; // <--- 1. PENTING: TAMBAHKAN BARIS INI
 
 class TransactionController extends Controller
 {
     // Halaman Daftar Transaksi
     public function index()
     {
-        // Menggunakan with() untuk Eager Loading agar query lebih ringan
         $transactions = Transaction::with(['user', 'product'])->latest()->get();
         return view('transactions.index', compact('transactions'));
     }
@@ -20,10 +20,7 @@ class TransactionController extends Controller
     // Halaman Form Checkout
     public function create()
     {
-        // Pastikan baris ini ada!
-        $products = Product::where('status', 'aktif')->get(); 
-        
-        // Pastikan compact('products') ada!
+        $products = Product::where('status', 'aktif')->get();
         return view('transactions.create', compact('products'));
     }
 
@@ -41,7 +38,7 @@ class TransactionController extends Controller
 
         // Simpan ke database
         Transaction::create([
-            'user_id' => 1, // Sementara hardcode ID user 1
+            'user_id' => Auth::id(), // <--- 2. UBAH JADI INI (Lebih aman & tidak merah)
             'product_id' => $product->id,
             'shipping_date' => $request->shipping_date,
             'total_price' => $total_price,
