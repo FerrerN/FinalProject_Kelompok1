@@ -2,9 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; 
 
 class Product extends Model
 {
-    //
+    use HasFactory, SoftDeletes;
+
+    
+    protected $primaryKey = 'id_produk';
+
+   
+    protected $fillable = [
+        'id_penjual',
+        'nama_barang',
+        'deskripsi',
+        'harga',
+        'stok',
+        'kategori',
+        'url_gambar',
+        'status',
+    ];
 }

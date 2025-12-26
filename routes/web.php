@@ -13,8 +13,8 @@ use App\Http\Controllers\UserManagementController; // <--- PENTING: Tambahkan ba
 // 1. FITUR TRANSAKSI (Kodingan Lama Kamu)
 // Redirect halaman utama ke halaman transaksi
 Route::get('/', function () {
-    return redirect()->route('transactions.index');
-});
+    return view('welcome');
+})->name('home');
 
 // Daftarkan semua rute transaksi
 Route::resource('transactions', TransactionController::class);
