@@ -14,15 +14,20 @@ class Product extends Model
     // protected $primaryKey = 'id_produk';  <-- HAPUS INI
 
     protected $fillable = [
-        'nama_barang',
-        'deskripsi',
-        'harga',
-        'stok',
-        'kategori',
-        'url_gambar',
-        'status'
-        // Jangan ada 'id_produk' atau 'user_id' disini
-    ];
-    
+    'user_id', // <--- Tambah ini
+    'nama_barang',
+    'deskripsi',
+    'harga',
+    'stok',
+    'kategori',
+    'url_gambar',
+    'status'
+];
+
+// Relasi: Produk milik satu User (Penjual)
+public function user()
+{
+    return $this->belongsTo(User::class);
+}
     // ... sisa kode relasi ...
 }

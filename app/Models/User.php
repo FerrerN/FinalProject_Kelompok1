@@ -16,10 +16,11 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = [
+   protected $fillable = [
         'name',
         'email',
         'password',
+        'role', 
     ];
 
     /**
@@ -43,5 +44,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Relasi: User (Penjual) punya banyak Produk
+    public function products()
+    {
+        return $this->hasMany(Product::class);
     }
 }
