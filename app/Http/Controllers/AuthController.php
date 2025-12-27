@@ -11,6 +11,10 @@ class AuthController extends Controller
 {
     // --- LOGIN ---
 
+use Illuminate\Routing\Controller; // <--- PERBAIKAN: Tambahkan baris ini!
+
+class AuthController extends Controller
+{
     // 1. Tampilkan Form Login
     public function showLoginForm()
     {
@@ -81,6 +85,20 @@ class AuthController extends Controller
 
     // --- LOGOUT ---
 
+        // Cek ke Database (Otomatis hash matching)
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            // Redirect ke halaman transaksi setelah login sukses
+            return redirect()->intended('transactions')->with('success', 'Berhasil Login!');
+        }
+
+        // Jika salah
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ]);
+    }
+
+    // 3. Proses Logout
     public function logout(Request $request)
     {
         Auth::logout();
@@ -90,3 +108,9 @@ class AuthController extends Controller
         return redirect('/login');
     }
 }
+        // Redirect ke halaman awal (Landing Page)
+        return redirect('/');
+    }
+}
+
+//ini Jabir lagi coba//

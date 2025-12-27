@@ -6,33 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::create('transactions', function (Blueprint $table) {
-        $table->id();
-        
-        // Relasi: Siapa yang beli? (User)
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        // Relasi: Beli apa? (Produk)
-        $table->foreignId('product_id')->constrained()->onDelete('cascade');
-        
-        // Data Transaksi
-        $table->string('status')->default('pending'); // pending, dikirim, selesai
-        $table->date('shipping_date'); // Untuk validasi API Libur Nasional
-        $table->decimal('total_price', 15, 2);
-        $table->text('notes')->nullable();
-        
-        $table->timestamps();
-        $table->softDeletes(); // Wajib untuk fitur hapus/batal pesanan
-    });
-}
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id();
+            
+            // Relasi User
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            
+            // Relasi Product (Penyebab Error 150 sebelumnya)
+            // Sekarang aman karena Products sudah pakai id()
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            
+            $table->date('shipping_date');
+            $table->decimal('total_price', 15, 2);
+            $table->string('status')->default('pending');
+            $table->text('notes')->nullable();
+            
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('transactions');

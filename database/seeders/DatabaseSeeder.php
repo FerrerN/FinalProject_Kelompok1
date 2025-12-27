@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
         // 4. BUAT DATA PRODUK DUMMY (Milik si Penjual di atas)
         Product::create([
             'user_id' => $seller->id, // Menggunakan ID dari akun seller yang baru dibuat
+            
             'nama_barang' => 'Laptop Gaming ROG',
             'deskripsi' => 'Laptop spek dewa untuk koding Laravel',
             'harga' => 15000000,
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
 
         Product::create([
             'user_id' => $seller->id,
+            
             'nama_barang' => 'Mouse Wireless Logitech',
             'deskripsi' => 'Mouse anti delay',
             'harga' => 250000,
