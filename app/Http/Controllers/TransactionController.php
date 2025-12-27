@@ -6,7 +6,7 @@ use App\Models\Transaction;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Auth; // <--- 1. PENTING: TAMBAHKAN BARIS INI
+use Illuminate\Support\Facades\Auth; 
 
 class TransactionController extends Controller
 {
@@ -38,7 +38,7 @@ class TransactionController extends Controller
 
         // Simpan ke database
         Transaction::create([
-            'user_id' => Auth::id(), // <--- 2. UBAH JADI INI (Lebih aman & tidak merah)
+            'user_id' => Auth::id(), 
             'product_id' => $product->id,
             'shipping_date' => $request->shipping_date,
             'total_price' => $total_price,
@@ -56,5 +56,6 @@ class TransactionController extends Controller
         $transaction->delete(); // Soft Delete
 
         return redirect()->route('transactions.index')->with('success', 'Pesanan dibatalkan.');
+        //ini coba aja
     }
 }
