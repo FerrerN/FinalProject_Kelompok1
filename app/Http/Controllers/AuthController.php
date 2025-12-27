@@ -46,3 +46,5 @@ class AuthController extends Controller
         return redirect('/');
     }
 }
+
+//ini Jabir lagi coba//
