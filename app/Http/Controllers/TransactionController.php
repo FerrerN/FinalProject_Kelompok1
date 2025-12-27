@@ -56,5 +56,6 @@ class TransactionController extends Controller
         $transaction->delete(); // Soft Delete
 
         return redirect()->route('transactions.index')->with('success', 'Pesanan dibatalkan.');
+        //ini coba aja
     }
 }
