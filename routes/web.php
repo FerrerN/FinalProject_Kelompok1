@@ -27,5 +27,4 @@ Route::middleware('auth')->group(function () {
     // Rute Manajemen Produk (Inventory)
     // Ini akan menampilkan halaman UI yang baru saja kita buat
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    
-});
+    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');});
