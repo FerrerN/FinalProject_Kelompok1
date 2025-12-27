@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
 
     // A. TRANSAKSI
     Route::resource('transactions', TransactionController::class);
+    // Tambahkan ini di bawah resource transactions
+    Route::get('/transactions/{transaction}/print', [TransactionController::class, 'printInvoice'])->name('transactions.print');
 
     // B. KHUSUS PENJUAL (Ditaruh di ATAS agar prioritas lebih tinggi)
     Route::middleware(['role:penjual'])->group(function () {
@@ -63,4 +65,6 @@ Route::middleware('auth')->group(function () {
     // Route {product} (Detail) ditaruh PALING BAWAH
     // Agar kata 'create' tidak dianggap sebagai ID produk
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+    
 });

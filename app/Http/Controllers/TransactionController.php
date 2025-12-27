@@ -105,4 +105,17 @@ class TransactionController extends Controller
 
         return back()->with('success', 'Transaksi berhasil dihapus.');
     }
+
+    // 6. CETAK INVOICE
+    public function printInvoice($id)
+    {
+        $transaction = Transaction::with(['user', 'product.user'])->findOrFail($id);
+        
+        // Pastikan hanya pemilik transaksi atau penjual yang bisa cetak
+        if (Auth::id() !== $transaction->user_id && Auth::id() !== $transaction->product->user_id) {
+            abort(403, 'Akses ditolak');
+        }
+
+        return view('transactions.invoice', compact('transaction'));
+    }
 }
