@@ -12,6 +12,8 @@
         .navbar-telu { background: linear-gradient(135deg, #b91d47 0%, #ee395f 100%); }
         .card-trx { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .status-badge { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+        .btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; }
+        .btn-icon:hover { background-color: #e9ecef; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -61,8 +63,8 @@
                                         @if(Auth::user()->role == 'penjual') Pembeli @else Penjual @endif
                                     </th>
                                     <th>Total & Tgl</th>
-                                    <th>Status Pesanan</th>
-                                    @if(Auth::user()->role == 'penjual') <th class="text-center">Aksi Penjual</th> @endif
+                                    <th>Status</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -105,22 +107,36 @@
                                             </span>
                                         </td>
                                         
-                                        @if(Auth::user()->role == 'penjual')
-                                            <td class="text-center" style="width: 200px;">
-                                                <form action="{{ route('transactions.update', $trx->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <div class="input-group input-group-sm">
-                                                        <select name="status" class="form-select border-danger" onchange="this.form.submit()">
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                                
+                                                <a href="{{ route('transactions.print', $trx->id) }}" target="_blank" class="btn-icon text-dark" title="Cetak Invoice">
+                                                    <i class="bi bi-printer"></i>
+                                                </a>
+
+                                                @if(Auth::user()->role == 'penjual')
+                                                    <form action="{{ route('transactions.update', $trx->id) }}" method="POST" class="d-inline">
+                                                        @csrf @method('PUT')
+                                                        <select name="status" class="form-select form-select-sm border-secondary" style="width: 100px;" onchange="this.form.submit()">
                                                             <option value="pending" {{ $trx->status == 'pending' ? 'selected' : '' }}>Pending</option>
                                                             <option value="dikirim" {{ $trx->status == 'dikirim' ? 'selected' : '' }}>Dikirim</option>
                                                             <option value="selesai" {{ $trx->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                             <option value="batal"   {{ $trx->status == 'batal' ? 'selected' : '' }}>Batal</option>
                                                         </select>
-                                                    </div>
-                                                </form>
-                                            </td>
-                                        @endif
+                                                    </form>
+                                                @endif
+
+                                                @if($trx->status == 'pending' || $trx->status == 'batal')
+                                                    <form action="{{ route('transactions.destroy', $trx->id) }}" method="POST" onsubmit="return confirm('Yakin hapus transaksi ini?');">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="btn-icon text-danger border-0 bg-transparent" title="Hapus">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
