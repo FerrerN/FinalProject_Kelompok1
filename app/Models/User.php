@@ -16,13 +16,11 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-   protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'role', 
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
     ];
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -46,8 +44,4 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function isAdmin() { return $this->role === 'admin'; }
-    public function isSeller() { return $this->role === 'seller'; }
-    public function isBuyer() { return $this->role === 'buyer'; }
-
 }
