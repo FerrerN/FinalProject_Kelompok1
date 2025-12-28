@@ -7,9 +7,8 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
-
-use Illuminate\Support\Facades\Http; // Tambahan untuk API
-use Barryvdh\DomPDF\Facade\Pdf;      // Tambahan untuk PDF
+use Illuminate\Support\Facades\Http; 
+use Barryvdh\DomPDF\Facade\Pdf;      
 
 class TransactionController extends Controller
 {

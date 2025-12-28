@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\File; // Tambahan untuk hapus file lama
+use Illuminate\Support\Facades\File; 
 
 class ProductController extends Controller
 {
