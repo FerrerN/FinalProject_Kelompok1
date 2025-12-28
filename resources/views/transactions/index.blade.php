@@ -110,10 +110,12 @@
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center align-items-center gap-2">
                                                 
+                                                {{-- 1. TOMBOL CETAK INVOICE --}}
                                                 <a href="{{ route('transactions.print', $trx->id) }}" target="_blank" class="btn-icon text-dark" title="Cetak Invoice">
                                                     <i class="bi bi-printer"></i>
                                                 </a>
 
+                                                {{-- 2. DROPDOWN STATUS (KHUSUS PENJUAL) --}}
                                                 @if(Auth::user()->role == 'penjual')
                                                     <form action="{{ route('transactions.update', $trx->id) }}" method="POST" class="d-inline">
                                                         @csrf @method('PUT')
@@ -126,6 +128,7 @@
                                                     </form>
                                                 @endif
 
+                                                {{-- 3. TOMBOL HAPUS (MUNCUL JIKA PENDING / BATAL) --}}
                                                 @if($trx->status == 'pending' || $trx->status == 'batal')
                                                     <form action="{{ route('transactions.destroy', $trx->id) }}" method="POST" onsubmit="return confirm('Yakin hapus transaksi ini?');">
                                                         @csrf @method('DELETE')
@@ -133,6 +136,13 @@
                                                             <i class="bi bi-trash"></i>
                                                         </button>
                                                     </form>
+                                                @endif
+
+                                                {{-- 4. TOMBOL BERI ULASAN (KHUSUS PEMBELI & STATUS SELESAI) --}}
+                                                @if(Auth::user()->role == 'pembeli' && $trx->status == 'selesai')
+                                                    <a href="{{ route('reviews.create', $trx->id) }}" class="btn-icon text-warning" title="Beri Ulasan">
+                                                        <i class="bi bi-star-fill"></i>
+                                                    </a>
                                                 @endif
 
                                             </div>

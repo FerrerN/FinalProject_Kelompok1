@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 
+use Illuminate\Support\Facades\Http; // Tambahan untuk API
+use Barryvdh\DomPDF\Facade\Pdf;      // Tambahan untuk PDF
+
 class TransactionController extends Controller
 {
     // 1. DAFTAR TRANSAKSI (Logic Pembeli vs Penjual)
@@ -37,7 +40,7 @@ class TransactionController extends Controller
         return view('transactions.create', compact('products'));
     }
 
-    // 3. PROSES SIMPAN TRANSAKSI (BELI LANGSUNG)
+    // 3. PROSES SIMPAN TRANSAKSI (DENGAN VALIDASI API HARI LIBUR)
     public function store(Request $request)
     {
         $request->validate([
@@ -45,6 +48,29 @@ class TransactionController extends Controller
             'quantity' => 'required|integer|min:1',
             'shipping_date' => 'required|date',
         ]);
+
+        // --- MULAI INTEGRASI API HARI LIBUR (SESUAI PROPOSAL) ---
+        // Kita ambil tahun dari tanggal yang diinput user
+        $year = date('Y', strtotime($request->shipping_date));
+        
+        // Panggil API Hari Libur Nasional
+        $response = Http::get("https://api-harilibur.vercel.app/api?year={$year}");
+        
+        if ($response->successful()) {
+            $holidays = $response->json();
+            $selectedDate = date('Y-m-d', strtotime($request->shipping_date));
+
+            foreach ($holidays as $holiday) {
+                // Cek apakah tanggal pilihan user sama dengan hari libur nasional
+                if ($holiday['holiday_date'] == $selectedDate && $holiday['is_national_holiday']) {
+                    // Jika ya, kembalikan error
+                    return back()->withErrors([
+                        'shipping_date' => "Pengiriman tidak bisa dilakukan pada hari libur nasional: " . $holiday['holiday_name']
+                    ])->withInput();
+                }
+            }
+        }
+        // --- SELESAI INTEGRASI API ---
 
         $product = Product::findOrFail($request->product_id);
 
@@ -57,7 +83,7 @@ class TransactionController extends Controller
         Transaction::create([
             'user_id' => Auth::id(),
             'product_id' => $product->id,
-            'quantity' => $request->quantity, // Pastikan kolom quantity ada di tabel transactions
+            'quantity' => $request->quantity,
             'total_price' => $product->harga * $request->quantity,
             'shipping_date' => $request->shipping_date,
             'status' => 'pending',
@@ -106,16 +132,34 @@ class TransactionController extends Controller
         return back()->with('success', 'Transaksi berhasil dihapus.');
     }
 
-    // 6. CETAK INVOICE
+    // 6. LIHAT INVOICE (Tampilan HTML Biasa)
     public function printInvoice($id)
     {
         $transaction = Transaction::with(['user', 'product.user'])->findOrFail($id);
         
-        // Pastikan hanya pemilik transaksi atau penjual yang bisa cetak
         if (Auth::id() !== $transaction->user_id && Auth::id() !== $transaction->product->user_id) {
             abort(403, 'Akses ditolak');
         }
 
         return view('transactions.invoice', compact('transaction'));
     }
+
+    // 7. DOWNLOAD PDF INVOICE (FITUR BARU SESUAI PROPOSAL)
+    public function exportInvoice($id)
+    {
+        $transaction = Transaction::with(['user', 'product.user'])->findOrFail($id);
+
+        // Validasi Akses
+        if (Auth::id() !== $transaction->user_id && Auth::id() !== $transaction->product->user_id) {
+            abort(403, 'Akses ditolak');
+        }
+
+        // Load View PDF (Pastikan file transactions/invoice_pdf.blade.php sudah dibuat)
+        $pdf = Pdf::loadView('transactions.invoice_pdf', compact('transaction'));
+        
+        // Download File
+        return $pdf->download('invoice-TRX-'.$transaction->id.'.pdf');
+    }
+
+   
 }
