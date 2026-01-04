@@ -56,6 +56,17 @@ return [
             'throw' => false,
         ],
 
+        // --- BAGIAN INI YANG SAYA TAMBAHKAN (CLOUDINARY) ---
+        // Saya masukkan kunci langsung di sini agar PASTI TERBACA
+        'cloudinary' => [
+            'driver' => 'cloudinary',
+            'cloud_name' => 'diwamovrc',
+            'api_key'    => '412444958673122',
+            'api_secret' => 'urWICKMAv4jyN3PMNfQ8hCMavbI',
+            'url'        => 'cloudinary://412444958673122:urWICKMAv4jyN3PMNfQ8hCMavbI@diwamovrc',
+        ],
+        // ----------------------------------------------------
+
     ],
 
     /*
