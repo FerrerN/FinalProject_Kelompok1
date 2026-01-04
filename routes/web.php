@@ -43,8 +43,9 @@ Route::middleware('auth')->group(function () {
     // B. FITUR KERANJANG
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add/{id}', [CartController::class, 'addToCart'])->name('cart.add');
-    Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
+    Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('carts.destroy');
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+   
 
     // C. TRANSAKSI & INVOICE
     Route::resource('transactions', TransactionController::class);
@@ -52,7 +53,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/transactions/{transaction}/print', [TransactionController::class, 'printInvoice'])->name('transactions.print');
     // Export PDF (Sesuai Proposal Ketua)
     Route::get('/transactions/{id}/export-pdf', [TransactionController::class, 'exportInvoice'])->name('transactions.export_pdf');
-
+    // Untuk Checkout dari Keranjang
+    Route::post('/checkout/process', [TransactionController::class, 'checkoutCart'])->name('checkout.process');
+     
     // D. FORUM DISKUSI
     Route::resource('forums', ForumController::class);
     Route::post('/forums/{id}/reply', [ForumController::class, 'reply'])->name('forums.reply');
