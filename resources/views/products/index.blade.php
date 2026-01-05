@@ -1,123 +1,101 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Produk & Reputasi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Katalog Produk - FJB Tel-U</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <style>
-        /* Font custom mirip Google Sans/Roboto */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8f9fa; }
+        .navbar-telu { background: linear-gradient(to right, #b91d47, #ee395f); }
+        .card-product { transition: transform 0.2s; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card-product:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .img-wrapper { height: 200px; background: #eee; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .img-wrapper img { object-fit: cover; height: 100%; width: 100%; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-    <div class="flex h-screen">
-        <aside class="w-64 bg-gray-100 border-r border-gray-200 hidden md:block">
-            <div class="p-6">
-                <h1 class="text-xl font-bold text-gray-700">Seller Dashboard</h1>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-telu shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ route('home') }}">
+                <i class="bi bi-bag-heart-fill me-2"></i> FJB Tel-U
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white d-none d-md-block">
+                    Halo, {{ Auth::user()->name }} 
+                    <span class="badge bg-white text-danger ms-1 text-uppercase">{{ Auth::user()->role }}</span>
+                </span>
+                <a href="{{ route('home') }}" class="btn btn-sm btn-outline-light rounded-pill">Home</a>
             </div>
-            <nav class="mt-4">
-                <a href="#" class="block py-3 px-6 text-gray-600 hover:bg-gray-200">Dashboard</a>
-                <a href="#" class="block py-3 px-6 text-blue-600 bg-blue-50 font-bold border-r-4 border-blue-600">Products</a>
-                <a href="#" class="block py-3 px-6 text-gray-600 hover:bg-gray-200">Reviews & Reputation</a>
-                <a href="#" class="block py-3 px-6 text-gray-600 hover:bg-gray-200">Orders</a>
-                <a href="#" class="block py-3 px-6 text-gray-600 hover:bg-gray-200">Profile</a>
-            </nav>
-        </aside>
+        </div>
+    </nav>
 
-        <main class="flex-1 p-8 overflow-y-auto">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Manajemen Produk & Reputasi</h2>
+    <div class="container pb-5">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-dark m-0">Daftar Produk</h3>
+            
+            @if(Auth::user()->role === 'penjual')
+                <a href="{{ route('products.create') }}" class="btn btn-danger rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-plus-lg me-2"></i>Tambah Produk
+                </a>
+            @endif
+        </div>
 
-            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <div class="flex gap-4 w-full md:w-auto">
-                    <input type="text" placeholder="Search..." class="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    
-                    <select class="border border-gray-300 rounded-md px-4 py-2 bg-white text-gray-600 focus:outline-none">
-                        <option>Filter Kategori</option>
-                        <option>Pakaian</option>
-                        <option>Olahraga</option>
-                        <option>Elektronik</option>
-                    </select>
-                </div>
-
-                <div class="flex gap-3">
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition flex items-center gap-2">
-                        Tambah Produk (+)
-                    </button>
-                    <button class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md font-medium transition">
-                        Download Laporan (PDF)
-                    </button>
-                </div>
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+        @endif
 
-            <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Gambar</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Nama Produk</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Kategori</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Harga</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Rating (Avg)</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Stok</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-600">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach($products as $product)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-6 py-4">
-                                <div class="h-12 w-12 bg-gray-200 rounded-md flex items-center justify-center text-gray-400 text-xs">
-                                    Image
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 font-medium text-gray-800">{{ $product['name'] }}</td>
-                            <td class="px-6 py-4 text-gray-600">{{ $product['category'] }}</td>
-                            <td class="px-6 py-4 text-gray-600">Rp {{ number_format($product['price'], 0, ',', '.') }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center text-yellow-400 text-sm">
-                                    @for($i = 0; $i < round($product['rating']); $i++)
-                                        <i class="fas fa-star"></i>
-                                    @endfor
-                                    @for($i = 0; $i < (5 - round($product['rating'])); $i++)
-                                        <i class="far fa-star text-gray-300"></i>
-                                    @endfor
-                                    <span class="ml-2 text-gray-500 text-xs font-semibold">{{ $product['rating'] }} ({{ $product['reviews'] }} Ulasan)</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-gray-600">{{ $product['stock'] }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex gap-3">
-                                    <button class="text-gray-500 hover:text-blue-600" title="Lihat Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="text-gray-500 hover:text-yellow-600" title="Edit">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </button>
-                                    <button class="text-gray-500 hover:text-red-600" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-center">
-                    <div class="flex gap-1">
-                        <button class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">Previous</button>
-                        <button class="px-3 py-1 border rounded bg-blue-600 text-white">1</button>
-                        <button class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">2</button>
-                        <button class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">3</button>
-                        <button class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">Next</button>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach($products as $product)
+                <div class="col">
+                    <div class="card card-product h-100 bg-white">
+                        <div class="img-wrapper">
+                            @if($product->url_gambar)
+                                <img src="{{ $product->url_gambar }}" alt="{{ $product->nama_barang }}">
+                            @else
+                                <div class="text-muted text-center"><i class="bi bi-image fs-1"></i><br>No Image</div>
+                            @endif
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-truncate">{{ $product->nama_barang }}</h5>
+                            <p class="text-danger fw-bold mb-1">Rp {{ number_format($product->harga, 0, ',', '.') }}</p>
+                            <small class="text-muted mb-3">Stok: {{ $product->stok }}</small>
+                            
+                            <div class="mt-auto d-grid gap-2">
+                                @if(Auth::user()->role === 'penjual')
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('products.edit', $product->id) }}" class="btn btn-warning btn-sm flex-fill text-white fw-bold">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="flex-fill" onsubmit="return confirm('Hapus produk ini?');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-bold">
+                                                <i class="bi bi-trash"></i> Hapus
+                                            </button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <a href="{{ route('transactions.create') }}" class="btn btn-danger rounded-pill fw-bold">
+                                        <i class="bi bi-cart-plus"></i> Beli Sekarang
+                                    </a>
+                                @endif
+
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
+            @endforeach
+        </div>
+
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
