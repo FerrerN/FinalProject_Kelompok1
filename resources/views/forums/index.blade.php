@@ -29,6 +29,11 @@
             background: linear-gradient(45deg, #b91d47, #d63384);
             border: none;
         }
+        /* Style Tambahan untuk Widget API */
+        .card-quote {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +122,27 @@
             </div>
 
             <div class="col-lg-4">
+                
+                @if(isset($quote))
+                <div class="card card-quote border-0 shadow-sm rounded-4 mb-4 position-relative overflow-hidden">
+                    <i class="bi bi-quote position-absolute text-white opacity-25" style="font-size: 6rem; top: -20px; right: 10px;"></i>
+                    
+                    <div class="card-body p-4 position-relative">
+                        <h6 class="fw-bold mb-3 text-white-50 text-uppercase" style="letter-spacing: 1px; font-size: 0.8rem;">
+                            <i class="bi bi-stars me-1"></i> Quote of The Day
+                        </h6>
+                        
+                        <figure class="mb-0">
+                            <blockquote class="blockquote">
+                                <p class="fs-5 fw-bold fst-italic">"{{ $quote }}"</p>
+                            </blockquote>
+                            <figcaption class="blockquote-footer text-white-50 mb-0 mt-2">
+                                <cite title="Source Title" class="text-white">{{ $author ?? 'Unknown' }}</cite>
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+                @endif
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-3"><i class="bi bi-shield-exclamation me-2 text-danger"></i>Aturan Forum</h6>
