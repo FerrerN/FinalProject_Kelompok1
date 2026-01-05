@@ -8,13 +8,16 @@ use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Routing\Controller; // <--- TAMBAHKAN BARIS INI
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class AdminController extends Controller
 {
     // --- 1. DASHBOARD ---
     public function dashboard()
     {
+        // 1. Ambil Data Statistik
         $stats = [
             'total_users' => User::count(),
             'active_sessions' => DB::table('sessions')->count(),
@@ -22,34 +25,48 @@ class AdminController extends Controller
             'recent_users' => User::latest()->take(5)->get()
         ];
 
-        return view('admin.dashboard', compact('stats'));
+        // 2. Ambil Data Cuaca (Cache selama 1 jam)
+        $weather = Cache::remember('weather_data', 3600, function () {
+            $apiKey = config('services.openweather.key');
+            $city = config('services.openweather.city');
+
+            try {
+                $response = Http::get("https://api.openweathermap.org/data/2.5/weather", [
+                    'q' => $city,
+                    'appid' => $apiKey,
+                    'units' => 'metric',
+                    'lang' => 'id'
+                ]);
+
+                return $response->json();
+            } catch (\Exception $e) {
+                return null;
+            }
+        });
+
+        return view('admin.dashboard', compact('stats', 'weather'));
     }
 
     // --- 2. USER MANAGEMENT ---
 
-    // Menampilkan List User (Dengan Fitur Filter Role)
     public function users(Request $request)
     {
         $query = User::latest();
 
-        // Cek apakah ada request filter 'role' (contoh: ?role=pembeli)
         if ($request->has('role') && $request->role != '') {
             $query->where('role', $request->role);
         }
 
-        // Gunakan pagination dan pertahankan query string saat pindah halaman
         $users = $query->paginate(10)->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }
 
-    // Halaman Edit User
     public function editUser(User $user)
     {
         return view('admin.users.edit', compact('user'));
     }
 
-    // Proses Update User
     public function updateUser(Request $request, User $user)
     {
         $request->validate([
@@ -65,7 +82,6 @@ class AdminController extends Controller
             'role' => $request->role,
         ];
 
-        // Hanya update password jika kolom diisi
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
@@ -75,10 +91,8 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
-    // Proses Hapus User (Beserta data terkaitnya)
     public function destroyUser(User $user)
     {
-        // Proteksi: Admin tidak boleh menghapus akun sendiri yang sedang login
         if ($user->id == auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
@@ -87,24 +101,19 @@ class AdminController extends Controller
         return back()->with('success', 'Akun pengguna berhasil dihapus beserta seluruh datanya.');
     }
 
+    // --- 3. PRODUCT MANAGEMENT ---
 
-    // --- 3. PRODUCT MANAGEMENT (CRUD LENGKAP) ---
-
-    // Menampilkan List Semua Produk (Milik Siapapun)
     public function products()
     {
-        // Eager load 'user' untuk menampilkan nama penjual
         $products = Product::with('user')->latest()->paginate(10);
         return view('admin.products.index', compact('products'));
     }
 
-    // Halaman Tambah Produk (Admin sebagai Penjual)
     public function createProduct()
     {
         return view('admin.products.create');
     }
 
-    // Proses Simpan Produk Baru
     public function storeProduct(Request $request)
     {
         $request->validate([
@@ -117,7 +126,7 @@ class AdminController extends Controller
         ]);
 
         Product::create([
-            'user_id' => auth()->id(), // Produk ini milik Admin yang sedang login
+            'user_id' => auth()->id(),
             'nama_barang' => $request->nama_barang,
             'harga' => $request->harga,
             'stok' => $request->stok,
@@ -130,13 +139,11 @@ class AdminController extends Controller
         return redirect()->route('admin.products')->with('success', 'Produk berhasil ditambahkan.');
     }
 
-    // Halaman Edit Produk (Admin bisa edit produk milik user lain)
     public function editProduct(Product $product)
     {
         return view('admin.products.edit', compact('product'));
     }
 
-    // Proses Update Produk
     public function updateProduct(Request $request, Product $product)
     {
         $request->validate([
@@ -152,7 +159,6 @@ class AdminController extends Controller
         return redirect()->route('admin.products')->with('success', 'Produk berhasil diperbarui.');
     }
 
-    // Proses Hapus Produk
     public function destroyProduct(Product $product)
     {
         $product->delete();

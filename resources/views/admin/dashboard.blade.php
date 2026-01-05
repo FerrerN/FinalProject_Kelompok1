@@ -47,6 +47,11 @@
                         <i class="bi bi-people me-2"></i> User Management
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.products') }}">
+                        <i class="bi bi-box-seam me-2"></i> Products
+                    </a>
+                </li>
                 <li class="nav-item mt-5">
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
@@ -72,48 +77,76 @@
             <div class="p-4 container-fluid">
 
                 <div class="row g-4 mb-5">
-                    <div class="col-md-4">
-                        <div class="card card-stat bg-white p-4 h-100">
-                            <div class="d-flex justify-content-between">
+
+                    <div class="col-md-3">
+                        <div class="card card-stat bg-white p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <div class="stat-label mb-1">Total Users</div>
                                     <div class="stat-value">{{ $stats['total_users'] }}</div>
                                 </div>
-                                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
                                     <i class="bi bi-people-fill fs-3"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card card-stat bg-white p-4 h-100">
-                            <div class="d-flex justify-content-between">
+
+                    <div class="col-md-3">
+                        <div class="card card-stat bg-white p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <div class="stat-label mb-1">Active Sessions</div>
                                     <div class="stat-value">{{ $stats['active_sessions'] }}</div>
                                 </div>
-                                <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
                                     <i class="bi bi-activity fs-3"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card card-stat bg-white p-4 h-100">
-                            <div class="d-flex justify-content-between">
+
+                    <div class="col-md-3">
+                        <div class="card card-stat bg-white p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <div class="stat-label mb-1">Total Products</div>
                                     <div class="stat-value">{{ $stats['total_products'] }}</div>
                                 </div>
-                                <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
                                     <i class="bi bi-box-seam-fill fs-3"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="card card-stat text-white p-3 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    @if(isset($weather) && isset($weather['main']))
+                                        <div class="stat-label text-white-50 mb-1">Cuaca {{ $weather['name'] }}</div>
+                                        <div class="stat-value text-white" style="font-size: 2rem;">{{ round($weather['main']['temp']) }}°C</div>
+                                        <div class="small text-white-50 text-capitalize">
+                                            {{ $weather['weather'][0]['description'] }}
+                                        </div>
+                                    @else
+                                        <div class="stat-label text-white-50">Cuaca</div>
+                                        <div class="stat-value text-white">-</div>
+                                        <div class="small">Data N/A</div>
+                                    @endif
+                                </div>
+                                @if(isset($weather) && isset($weather['weather']))
+                                    <img src="https://openweathermap.org/img/wn/{{ $weather['weather'][0]['icon'] }}@2x.png" alt="Icon" width="60">
+                                @else
+                                    <i class="bi bi-cloud-slash fs-1 text-white-50"></i>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <div class="row g-4">
+
                     <div class="col-md-8">
                         <div class="card border-0 shadow-sm rounded-4">
                             <div class="card-header bg-white border-0 py-3">
@@ -161,6 +194,10 @@
                                         <span><i class="bi bi-people-fill me-2"></i> Manage Users</span>
                                         <i class="bi bi-chevron-right"></i>
                                     </a>
+                                    <a href="{{ route('admin.products') }}" class="btn btn-outline-danger py-3 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-box-seam me-2"></i> Manage Products</span>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
                                     <button class="btn btn-outline-secondary py-3 d-flex justify-content-between align-items-center" disabled>
                                         <span><i class="bi bi-file-earmark-spreadsheet-fill me-2"></i> Export Report</span>
                                         <i class="bi bi-lock"></i>
@@ -169,6 +206,7 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                 <footer class="mt-5 text-muted small text-center">
