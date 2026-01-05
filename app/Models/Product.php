@@ -32,6 +32,6 @@ class Product extends Model
     // Relasi ke Review
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class) ->latest();
     }
 }

@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FJB Tel-U - Jual Beli Mahasiswa</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+
     <style>
         body {
             background-color: #f8f9fa;
@@ -22,18 +22,18 @@
         }
 
         /* Styling Menu Navigasi */
-        .nav-link { 
-            color: rgba(255,255,255,0.9) !important; 
-            font-weight: 500; 
-            transition: 0.3s; 
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+            transition: 0.3s;
         }
-        .nav-link:hover { 
-            color: #fff !important; 
-            transform: translateY(-2px); 
+        .nav-link:hover {
+            color: #fff !important;
+            transform: translateY(-2px);
         }
-        .nav-link.active { 
-            font-weight: bold; 
-            border-bottom: 2px solid white; 
+        .nav-link.active {
+            font-weight: bold;
+            border-bottom: 2px solid white;
         }
 
         /* Card Produk */
@@ -85,7 +85,7 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-telu fixed-top shadow-sm py-3">
+   <nav class="navbar navbar-expand-lg navbar-dark navbar-telu fixed-top shadow-sm py-3">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="{{ route('home') }}">
                 <i class="bi bi-bag-heart-fill me-2"></i> FJB Tel-U
@@ -93,10 +93,10 @@
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center gap-2">
-                    
+
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('home') }}">Beranda</a>
                     </li>
@@ -107,6 +107,7 @@
                     </li>
 
                     @auth
+                        @if(Auth::user()->role == 'pembeli')
                         <li class="nav-item me-2">
                             <a href="{{ route('cart.index') }}" class="btn btn-outline-light position-relative border-0 rounded-circle" style="width: 45px; height: 45px; display:flex; align-items:center; justify-content:center;">
                                 <i class="bi bi-cart3 fs-5"></i>
@@ -118,16 +119,29 @@
                                 @endif
                             </a>
                         </li>
+                        @endif
 
                         <li class="nav-item dropdown">
                             <a class="btn btn-light dropdown-toggle text-danger bg-white px-3 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle fs-5"></i> 
+                                <i class="bi bi-person-circle fs-5"></i>
                                 <span>{{ Auth::user()->name }}</span>
                             </a>
-                            
+
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 rounded-4 p-2" style="min-width: 220px;">
                                 <li><h6 class="dropdown-header text-uppercase text-muted small fw-bold">Menu {{ Auth::user()->role }}</h6></li>
-                                
+
+                                {{-- MENU KHUSUS ADMIN --}}
+                                @if(Auth::user()->role == 'admin')
+                                    <li>
+                                        <a class="dropdown-item py-2 rounded-2 fw-bold text-danger" href="{{ route('admin.dashboard') }}">
+                                            <i class="bi bi-speedometer2 me-2"></i> Dashboard Admin
+                                        </a>
+                                    </li>
+                                    <li><a class="dropdown-item py-2 rounded-2" href="{{ route('admin.users') }}"><i class="bi bi-people me-2"></i> Kelola User</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                @endif
+
+                                {{-- MENU KHUSUS PENJUAL --}}
                                 @if(Auth::user()->role == 'penjual')
                                     <li><a class="dropdown-item py-2 rounded-2" href="{{ route('products.index') }}"><i class="bi bi-box-seam me-2 text-danger"></i> Kelola Produk</a></li>
                                     <li><a class="dropdown-item py-2 rounded-2" href="{{ route('products.export_stock') }}"><i class="bi bi-file-earmark-pdf me-2 text-warning"></i> Laporan Stok</a></li>
@@ -135,8 +149,11 @@
                                 @endif
 
                                 <li><a class="dropdown-item py-2 rounded-2" href="{{ route('profile.edit') }}"><i class="bi bi-person-gear me-2 text-primary"></i> Edit Profil</a></li>
+
+                                @if(Auth::user()->role == 'pembeli')
                                 <li><a class="dropdown-item py-2 rounded-2" href="{{ route('transactions.index') }}"><i class="bi bi-receipt me-2 text-success"></i> Riwayat Transaksi</a></li>
-                                
+                                @endif
+
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form action="{{ route('logout') }}" method="POST">
@@ -179,7 +196,7 @@
     @endif
 
     <div class="container py-4">
-        
+
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5 text-white hero-gradient-red">
             <div class="card-body p-5">
                 <div class="row align-items-center">
@@ -207,7 +224,7 @@
                 <h3 class="fw-bold text-dark m-0">Rekomendasi Terbaru</h3>
                 <p class="text-muted small m-0">Update stok real-time dari teman kampusmu.</p>
             </div>
-            
+
             @auth @if(Auth::user()->role == 'penjual')
                 <a href="{{ route('products.create') }}" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
                     <i class="bi bi-plus-lg"></i> Jual Barang
@@ -220,7 +237,7 @@
                 @foreach($products as $product)
                     <div class="col">
                         <div class="card h-100 product-card shadow-sm position-relative">
-                            
+
                             <a href="{{ route('products.show', $product->id) }}" class="text-decoration-none">
                                 <div class="product-img-wrapper">
                                     @if($product->stok <= 0)
@@ -248,9 +265,9 @@
 
                                 <div class="mt-auto pt-3 border-top">
                                     <h5 class="fw-bold text-danger mb-3">Rp {{ number_format($product->harga, 0, ',', '.') }}</h5>
-                                    
+
                                     @auth
-                                        @if(Auth::user()->id !== $product->user_id) 
+                                        @if(Auth::user()->id !== $product->user_id)
                                             <form action="{{ route('cart.add', $product->id) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold btn-sm">

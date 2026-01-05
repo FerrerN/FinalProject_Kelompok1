@@ -33,6 +33,18 @@ class DatabaseSeeder extends Seeder
             'email' => 'pembeli@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'pembeli',
+
+
+        ]);
+
+        // ... kode user lain ...
+
+        // 4. Buat Akun ADMIN (PENTING AGAR BISA AKSES DASHBOARD ADMIN)
+        User::create([
+            'name' => 'Super Admin',
+            'email' => 'admin@fjb.com', // Email untuk login
+            'password' => Hash::make('password'), // Password: password
+            'role' => 'admin', // Role harus 'admin'
         ]);
 
         // --- CONTOH PRODUK UNTUK TOKO GADGET ---

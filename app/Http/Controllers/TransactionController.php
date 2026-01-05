@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Http; 
 use Barryvdh\DomPDF\Facade\Pdf;
-// Tambahkan Library Midtrans
 use Midtrans\Config;
 use Midtrans\Snap;
 
