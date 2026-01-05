@@ -32,7 +32,7 @@ Route::middleware('guest')->group(function () {
 
 // --- 3. MEMBER AREA (SUDAH LOGIN) ---
 Route::middleware('auth')->group(function () {
-    
+                   
     // LOGOUT
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -89,4 +89,19 @@ Route::middleware('auth')->group(function () {
     // H. DETAIL PRODUK (Wildcard)
     // WAJIB Ditaruh PALING BAWAH dalam urutan route produk
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+});
+
+Route::prefix('api')->group(function () {
+    
+   
+    Route::get('/forums', [ForumController::class, 'index']);
+    Route::get('/forums/{id}', [ForumController::class, 'show']);
+
+    
+    Route::middleware('auth')->group(function () {
+        Route::post('/forums', [ForumController::class, 'store']);
+        Route::put('/forums/{id}', [ForumController::class, 'update']);
+        Route::delete('/forums/{id}', [ForumController::class, 'destroy']);
+        Route::post('/forums/{id}/reply', [ForumController::class, 'reply']);
+    });
 });

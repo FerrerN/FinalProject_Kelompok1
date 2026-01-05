@@ -163,5 +163,48 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Fungsi API untuk mengirim balasan
+        async function kirimBalasan(forumId, isiKonten) {
+            try {
+                const response = await fetch(`/api/forums/${forumId}/reply`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        // CSRF Token sangat penting karena ini diletakkan di web.php
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                    },
+                    body: JSON.stringify({ content: isiKonten })
+                });
+
+                const hasil = await response.json();
+                
+                if (response.ok) {
+                    alert('Komentar berhasil masuk via API!');
+                    location.reload(); 
+                } else {
+                    alert('Gagal mengirim balasan: ' + (hasil.message || 'Terjadi kesalahan'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Tidak dapat terhubung ke server.');
+            }
+        }
+
+        // Integrasi ke Form Balasan yang sudah ada di show.blade.php
+        document.querySelector('form[action*="reply"]').addEventListener('submit', function(e) {
+            e.preventDefault(); // Mencegah reload halaman standar
+            
+            const forumId = "{{ $forum->id }}";
+            const konten = this.querySelector('textarea[name="content"]').value;
+            
+            kirimBalasan(forumId, konten);
+        });
+    </script>
+</body>
+</html>
 </body>
 </html>
