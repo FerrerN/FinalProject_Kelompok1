@@ -32,7 +32,7 @@ Route::middleware('guest')->group(function () {
 
 // --- 3. MEMBER AREA (SUDAH LOGIN) ---
 Route::middleware('auth')->group(function () {
-    
+
     // LOGOUT
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/cart/add/{id}', [CartController::class, 'addToCart'])->name('cart.add');
     Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('carts.destroy');
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-   
+
 
     // C. TRANSAKSI & INVOICE
     Route::resource('transactions', TransactionController::class);
@@ -55,7 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/transactions/{id}/export-pdf', [TransactionController::class, 'exportInvoice'])->name('transactions.export_pdf');
     // Untuk Checkout dari Keranjang
     Route::post('/checkout/process', [TransactionController::class, 'checkoutCart'])->name('checkout.process');
-     
+
     // D. FORUM DISKUSI
     Route::resource('forums', ForumController::class);
     Route::post('/forums/{id}/reply', [ForumController::class, 'reply'])->name('forums.reply');
@@ -63,7 +63,7 @@ Route::middleware('auth')->group(function () {
     // E. ULASAN & RATING (CRUD LENGKAP)
     Route::get('/reviews/create/{transaction}', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    
+
     // TAMBAHAN UNTUK EDIT & DELETE
     Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
@@ -77,7 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:penjual'])->group(function () {
         // Export Laporan Stok PDF
         Route::get('/my-products/export-stock', [ProductController::class, 'exportStockReport'])->name('products.export_stock');
-        
+
         // CRUD Produk
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -89,4 +89,32 @@ Route::middleware('auth')->group(function () {
     // H. DETAIL PRODUK (Wildcard)
     // WAJIB Ditaruh PALING BAWAH dalam urutan route produk
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+    // ... (Kode sebelumnya)
+
+    // 1. Dashboard Admin
+    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+
+        // Dashboard Home
+        Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+        // User Management
+        Route::get('/users', [App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
+        Route::get('/users/{user}/edit', [App\Http\Controllers\AdminController::class, 'editUser'])->name('admin.users.edit');
+        Route::put('/users/{user}', [App\Http\Controllers\AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/users/{user}', [App\Http\Controllers\AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+        // ... Di dalam Route::middleware(['role:admin'])->prefix('admin')->group(function () { ...
+
+    // MANAJEMEN PRODUK (CRUD LENGKAP)
+    Route::get('/products', [App\Http\Controllers\AdminController::class, 'products'])->name('admin.products');
+    Route::get('/products/create', [App\Http\Controllers\AdminController::class, 'createProduct'])->name('admin.products.create');
+    Route::post('/products', [App\Http\Controllers\AdminController::class, 'storeProduct'])->name('admin.products.store');
+    Route::get('/products/{product}/edit', [App\Http\Controllers\AdminController::class, 'editProduct'])->name('admin.products.edit');
+    Route::put('/products/{product}', [App\Http\Controllers\AdminController::class, 'updateProduct'])->name('admin.products.update');
+    Route::delete('/products/{product}', [App\Http\Controllers\AdminController::class, 'destroyProduct'])->name('admin.products.destroy');
+
+// ...
+    });
+
+    // ... (Kode selanjutnya)
 });
