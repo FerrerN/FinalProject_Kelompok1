@@ -7,123 +7,115 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use App\Models\Product;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\Http; // Untuk API Libur (Tetap dipakai)
+use Carbon\Carbon;                   // Untuk Tanggal
 
-
-// --- WAJIB TAMBAHKAN DUA BARIS INI AGAR TIDAK ERROR ---
-use Illuminate\Support\Facades\Http; // <--- Untuk API
-use Carbon\Carbon;                   // <--- Untuk Tanggal
-// -----------------------------------------------------
 
 class CartController extends Controller
 {
     // 1. Tampilkan Isi Keranjang
     public function index()
     {
-        // 1. Ambil Data Keranjang User
         $carts = Cart::where('user_id', Auth::id())->with('product')->get();
         
-        // 2. Hitung Total Bayar
         $total = 0;
         foreach($carts as $cart) {
             $total += $cart->product->harga * $cart->quantity;
         }
 
-        // --- INTEGRASI API HARI LIBUR (UNTUK TAMPILAN) ---
-        
-        // A. Tentukan Estimasi (Misal: 3 Hari dari Sekarang)
-        $estimasi = Carbon::create(2026, 01, 7); // Simulasi Tanggal Merah
+        // --- API HARI LIBUR GRATIS (TETAP ADA) ---
+        $estimasi = Carbon::now()->addDays(3); 
         $tanggalCek = $estimasi->format('Y-m-d');
         $tahun = $estimasi->format('Y');
-
-        $infoLibur = null; // Default kosong
+        $infoLibur = null;
 
         try {
-            // B. Tembak API Hari Libur
             $response = Http::timeout(2)->get("https://api-harilibur.vercel.app/api?year={$tahun}");
-            
             if ($response->successful()) {
                 $dataLibur = $response->json();
-                
-                // C. Cek apakah estimasi tanggal kita == hari libur
                 foreach ($dataLibur as $libur) {
                     if ($libur['holiday_date'] == $tanggalCek && $libur['is_national_holiday']) {
-                        $infoLibur = $libur['holiday_name']; // Simpan nama hari liburnya
+                        $infoLibur = $libur['holiday_name'];
                         break;
                     }
                 }
             }
         } catch (\Exception $e) {
-            // Abaikan jika API error/lemot, biar web tetap jalan
+            // Silent fail
         }
 
-        // Kirim data ke View (carts, total, estimasi, infoLibur)
         return view('carts.index', compact('carts', 'total', 'estimasi', 'infoLibur'));
     }
 
-    // 2. Tambah Barang ke Keranjang
+    // 2. Tambah Barang
     public function addToCart(Request $request, $productId)
     {
         $product = Product::findOrFail($productId);
-
-        // Cek apakah barang sudah ada di keranjang user?
         $existingCart = Cart::where('user_id', Auth::id())
                             ->where('product_id', $productId)
                             ->first();
 
         if ($existingCart) {
-            // Jika sudah ada, tambah jumlahnya saja
             $existingCart->quantity += 1;
             $existingCart->save();
         } else {
-            // Jika belum ada, buat baru
             Cart::create([
                 'user_id' => Auth::id(),
                 'product_id' => $productId,
                 'quantity' => 1
             ]);
         }
-
         return redirect()->back()->with('success', 'Produk masuk keranjang!');
     }
 
-    // 3. Hapus Barang dari Keranjang
+    // 3. Hapus Barang
     public function destroy($id)
     {
-        // Cari item keranjang berdasarkan ID dan pastikan punya user yang sedang login
         $cart = Cart::where('user_id', Auth::id())->where('id', $id)->firstOrFail();
-        
         $cart->delete();
-
-        return back()->with('success', 'Barang berhasil dihapus dari keranjang.');
+        return back()->with('success', 'Barang dihapus.');
     }
 
-    // 4. Proses Checkout (Semua barang di keranjang jadi Transaksi)
+    // 4. PROSES CHECKOUT (MANUAL / TANPA MIDTRANS)
     public function checkout(Request $request)
     {
-        $carts = Cart::where('user_id', Auth::id())->get();
+        $carts = Cart::where('user_id', Auth::id())->with('product')->get();
 
         if ($carts->isEmpty()) {
             return redirect()->back()->with('error', 'Keranjang masih kosong!');
         }
 
+        // Ambil Tanggal dari Input view atau Default H+3
+        $shippingDate = $request->input('shipping_date', now()->addDays(3));
+
         foreach ($carts as $cart) {
-            // Simpan ke tabel Transaksi
+            
+            // Cek Stok
+            if ($cart->product->stok < $cart->quantity) {
+                return back()->withErrors(['error' => 'Stok ' . $cart->product->nama_barang . ' habis!']);
+            }
+
+            // Simpan Transaksi
             Transaction::create([
-                'user_id' => Auth::id(),
-                'product_id' => $cart->product_id,
-                'shipping_date' => now()->addDays(2), // Default kirim lusa
-                'total_price' => $cart->product->harga * $cart->quantity,
-                'status' => 'pending',
-                'notes' => 'Checkout via Keranjang'
+                'user_id'       => Auth::id(),
+                'product_id'    => $cart->product_id,
+                'quantity'      => $cart->quantity,
+                'shipping_date' => $shippingDate,
+                'total_price'   => $cart->product->harga * $cart->quantity,
+                'status'        => 'pending', // Status awal pending, nanti diupdate penjual
+                'notes'         => 'Menunggu Pembayaran Manual'
             ]);
             
-            // Kurangi Stok Produk (Opsional, tapi bagus ada)
+            // (KODE MIDTRANS SUDAH DIHAPUS DISINI)
+
+            // Kurangi Stok
             $cart->product->decrement('stok', $cart->quantity);
         }
 
-        // Kosongkan Keranjang setelah checkout
+        // Kosongkan Keranjang
         Cart::where('user_id', Auth::id())->delete();
 
-        return redirect()->route('transactions.index')->with('success', 'Checkout berhasil! Pesanan sedang diproses.');
+        return redirect()->route('transactions.index')->with('success', 'Checkout berhasil! Silakan hubungi penjual untuk pembayaran.');
     }
 }
