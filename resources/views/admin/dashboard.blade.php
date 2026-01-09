@@ -145,8 +145,8 @@
                         </div>
                     </div>
 
-                </div> <div class="row g-4">
-
+                </div>
+                <div class="row g-4">
                     <div class="col-md-8">
                         <div class="card border-0 shadow-sm rounded-4">
                             <div class="card-header bg-white border-0 py-3">
@@ -198,15 +198,17 @@
                                         <span><i class="bi bi-box-seam me-2"></i> Manage Products</span>
                                         <i class="bi bi-chevron-right"></i>
                                     </a>
-                                    <button class="btn btn-outline-secondary py-3 d-flex justify-content-between align-items-center" disabled>
-                                        <span><i class="bi bi-file-earmark-spreadsheet-fill me-2"></i> Export Report</span>
-                                        <i class="bi bi-lock"></i>
-                                    </button>
+
+                                    {{-- TOMBOL EXPORT PDF YANG SUDAH DIAKTIFKAN --}}
+                                    <a href="{{ route('admin.export_report') }}" class="btn btn-outline-success py-3 d-flex justify-content-between align-items-center text-decoration-none">
+                                        <span><i class="bi bi-file-earmark-pdf-fill me-2"></i> Export Report (PDF)</span>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <footer class="mt-5 text-muted small text-center">

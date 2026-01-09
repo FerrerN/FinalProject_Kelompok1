@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf; // Library PDF
 
 class AdminController extends Controller
 {
@@ -25,26 +26,58 @@ class AdminController extends Controller
             'recent_users' => User::latest()->take(5)->get()
         ];
 
-        // 2. Ambil Data Cuaca (Cache selama 1 jam)
+        // 2. Ambil Data Cuaca
+        // Hapus Cache dulu biar update: php artisan cache:clear
         $weather = Cache::remember('weather_data', 3600, function () {
+            
+            // Ambil dari config yang baru kita buat
             $apiKey = config('services.openweather.key');
             $city = config('services.openweather.city');
 
+            // Cek apakah API Key ada?
+            if (!$apiKey) {
+                return null; // Kalau gak ada key, langsung N/A
+            }
+
             try {
-                $response = Http::get("https://api.openweathermap.org/data/2.5/weather", [
+                // Tambahkan withoutVerifying() untuk bypass SSL Error di Localhost
+                $response = Http::withoutVerifying()->timeout(5)->get("https://api.openweathermap.org/data/2.5/weather", [
                     'q' => $city,
                     'appid' => $apiKey,
                     'units' => 'metric',
                     'lang' => 'id'
                 ]);
 
-                return $response->json();
+                if ($response->successful()) {
+                    return $response->json();
+                }
+                
+                return null;
             } catch (\Exception $e) {
+                // Uncomment baris bawah ini jika ingin lihat pesan errornya di layar
+                // dd($e->getMessage());
                 return null;
             }
         });
 
         return view('admin.dashboard', compact('stats', 'weather'));
+    }
+
+    // --- BARU: METHOD EXPORT PDF ---
+    public function exportReport()
+    {
+        // 1. Ambil data yang mau dicetak
+        $data = [
+            'users' => User::all(),
+            'products' => Product::with('user')->get(),
+            'date' => date('d-m-Y')
+        ];
+
+        // 2. Load View khusus PDF (pastikan file view admin/report_pdf.blade.php sudah dibuat)
+        $pdf = Pdf::loadView('admin.report_pdf', $data);
+
+        // 3. Download file
+        return $pdf->download('laporan-admin-fjb.pdf');
     }
 
     // --- 2. USER MANAGEMENT ---

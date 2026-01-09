@@ -144,9 +144,11 @@ Route::middleware('auth')->group(function () {
     // =======================
     Route::middleware(['role:admin'])->prefix('admin')->group(function () {
 
+        // Dashboard Home
         Route::get('/dashboard', [AdminController::class, 'dashboard'])
             ->name('admin.dashboard');
 
+        // User Management
         Route::get('/users', [AdminController::class, 'users'])
             ->name('admin.users');
 
@@ -159,6 +161,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])
             ->name('admin.users.destroy');
 
+        // Produk Management (Admin)
         Route::get('/products', [AdminController::class, 'products'])
             ->name('admin.products');
 
@@ -176,6 +179,10 @@ Route::middleware('auth')->group(function () {
 
         Route::delete('/products/{product}', [AdminController::class, 'destroyProduct'])
             ->name('admin.products.destroy');
+
+        // Laporan (Export Report) - Ditambahkan dari branch main
+        Route::get('/export-report', [AdminController::class, 'exportReport'])
+            ->name('admin.export_report');
     });
 
     // =======================
@@ -191,9 +198,11 @@ Route::middleware('auth')->group(function () {
 // =======================
 Route::prefix('api')->group(function () {
 
+    // Public API
     Route::get('/forums', [ForumController::class, 'index']);
     Route::get('/forums/{id}', [ForumController::class, 'show']);
 
+    // Private API
     Route::middleware('auth')->group(function () {
         Route::post('/forums', [ForumController::class, 'store']);
         Route::put('/forums/{id}', [ForumController::class, 'update']);
