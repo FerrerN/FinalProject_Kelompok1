@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
-// PENTING: Kita pakai Storage bawaan Laravel, bukan library Cloudinary langsung
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
@@ -26,7 +25,7 @@ class ProductController extends Controller
         return view('products.create');
     }
 
-    // 3. SIMPAN PRODUK (CARA STORAGE LARAVEL)
+    // 3. SIMPAN PRODUK
     public function store(Request $request)
     {
         $request->validate([
@@ -41,12 +40,7 @@ class ProductController extends Controller
         $url_gambar = null;
         
         if ($request->hasFile('gambar')) {
-            // CARA BARU YANG LEBIH STABIL:
-            // 1. Simpan file menggunakan disk 'cloudinary' yang sudah kita setting di config/filesystems.php
-            //    Ini otomatis mengupload ke Cloudinary.
             $path = $request->file('gambar')->store('marketplace_products', 'cloudinary');
-            
-            // 2. Minta URL lengkap (https://...) dari disk tersebut
             $url_gambar = Storage::disk('cloudinary')->url($path);
         }
 
@@ -72,7 +66,7 @@ class ProductController extends Controller
         return view('products.edit', compact('product'));
     }
 
-    // 5. UPDATE PRODUK (CARA STORAGE LARAVEL)
+    // 5. UPDATE PRODUK
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
@@ -96,7 +90,6 @@ class ProductController extends Controller
         ];
 
         if ($request->hasFile('gambar')) {
-            // Upload baru via Storage
             $path = $request->file('gambar')->store('marketplace_products', 'cloudinary');
             $dataUpdate['url_gambar'] = Storage::disk('cloudinary')->url($path);
         }
@@ -130,12 +123,25 @@ class ProductController extends Controller
         return view('products.show', compact('product', 'reviewableTransaction'));
     }
 
-    // 8. EXPORT PDF
+    // 8. EXPORT PDF (BAGIAN YANG DIUPDATE)
     public function exportStockReport()
     {
-        if (Auth::user()->role !== 'penjual') abort(403);
+        // Validasi Role
+        if (Auth::user()->role !== 'penjual') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // KITA TIDAK PAKAI 'with()' KARENA 'kategori' ADALAH KOLOM BIASA DI TABEL PRODUK
+        // Jadi cukup query biasa saja, data kategori otomatis ikut terambil.
         $products = Product::where('user_id', Auth::id())->get();
+
+        // Load view PDF
         $pdf = Pdf::loadView('products.stock_report_pdf', compact('products'));
-        return $pdf->download('laporan-stok-'.date('Y-m-d').'.pdf');
+
+        // Set ukuran kertas
+        $pdf->setPaper('a4', 'portrait');
+
+        // Return download
+        return $pdf->download('Laporan_Stok_'. date('Y-m-d_H-i') .'.pdf');
     }
 }
