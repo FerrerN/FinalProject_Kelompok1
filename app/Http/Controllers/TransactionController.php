@@ -40,7 +40,7 @@ class TransactionController extends Controller
         return view('transactions.create', compact('products'));
     }
 
-    // 3. PROSES SIMPAN (API HARI LIBUR + MIDTRANS)
+    // 3. PROSES SIMPAN (API HARI LIBUR)
     public function store(Request $request)
     {
         // A. Validasi Input

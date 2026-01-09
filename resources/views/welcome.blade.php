@@ -107,6 +107,7 @@
                     </li>
 
                     @auth
+                        {{-- Icon Keranjang (Hanya untuk Pembeli) --}}
                         @if(Auth::user()->role == 'pembeli')
                         <li class="nav-item me-2">
                             <a href="{{ route('cart.index') }}" class="btn btn-outline-light position-relative border-0 rounded-circle" style="width: 45px; height: 45px; display:flex; align-items:center; justify-content:center;">
@@ -121,6 +122,7 @@
                         </li>
                         @endif
 
+                        {{-- Dropdown Profil User --}}
                         <li class="nav-item dropdown">
                             <a class="btn btn-light dropdown-toggle text-danger bg-white px-3 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle fs-5"></i>
@@ -145,6 +147,8 @@
                                 @if(Auth::user()->role == 'penjual')
                                     <li><a class="dropdown-item py-2 rounded-2" href="{{ route('products.index') }}"><i class="bi bi-box-seam me-2 text-danger"></i> Kelola Produk</a></li>
                                     <li><a class="dropdown-item py-2 rounded-2" href="{{ route('products.export_stock') }}"><i class="bi bi-file-earmark-pdf me-2 text-warning"></i> Laporan Stok</a></li>
+                                    {{-- [BARU] Menu untuk mengelola status pesanan masuk --}}
+                                    <li><a class="dropdown-item py-2 rounded-2" href="{{ route('transactions.index') }}"><i class="bi bi-bag-check me-2 text-success"></i> Pesanan Masuk</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                 @endif
 
@@ -178,6 +182,7 @@
         </div>
     </nav>
 
+    {{-- Flash Message --}}
     @if(session('success') || session('error'))
         <div class="floating-alert">
             @if(session('success'))
@@ -197,6 +202,7 @@
 
     <div class="container py-4">
 
+        {{-- Hero Section --}}
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5 text-white hero-gradient-red">
             <div class="card-body p-5">
                 <div class="row align-items-center">
@@ -219,6 +225,7 @@
             </div>
         </div>
 
+        {{-- Header Katalog & Tombol Aksi Penjual --}}
         <div id="katalog" class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h3 class="fw-bold text-dark m-0">Rekomendasi Terbaru</h3>
@@ -226,12 +233,19 @@
             </div>
 
             @auth @if(Auth::user()->role == 'penjual')
-                <a href="{{ route('products.create') }}" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
-                    <i class="bi bi-plus-lg"></i> Jual Barang
-                </a>
+                {{-- [BARU] Tombol Shortcut untuk Penjual --}}
+                <div class="d-flex gap-2">
+                    <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
+                        <i class="bi bi-receipt"></i> Cek Pesanan
+                    </a>
+                    <a href="{{ route('products.create') }}" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
+                        <i class="bi bi-plus-lg"></i> Jual Barang
+                    </a>
+                </div>
             @endif @endauth
         </div>
 
+        {{-- Grid Produk --}}
         @if(isset($products) && $products->count() > 0)
             <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
                 @foreach($products as $product)
@@ -243,7 +257,8 @@
                                     @if($product->stok <= 0)
                                         <div class="out-of-stock-badge">Habis</div>
                                     @endif
-                                    <img src="{{ $product->url_gambar }}" alt="{{ $product->nama_barang }}">
+                                    {{-- Pastikan URL Gambar Valid --}}
+                                    <img src="{{ $product->url_gambar ?? 'https://placehold.co/300x300?text=No+Image' }}" alt="{{ $product->nama_barang }}">
                                 </div>
                             </a>
 
@@ -270,7 +285,7 @@
                                         @if(Auth::user()->id !== $product->user_id)
                                             <form action="{{ route('cart.add', $product->id) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold btn-sm">
+                                                <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold btn-sm" {{ $product->stok <= 0 ? 'disabled' : '' }}>
                                                     <i class="bi bi-cart-plus me-1"></i> + Keranjang
                                                 </button>
                                             </form>
