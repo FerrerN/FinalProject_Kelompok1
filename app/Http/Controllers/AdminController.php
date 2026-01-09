@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf; // Library PDF
 
 class AdminController extends Controller
 {
@@ -45,6 +46,23 @@ class AdminController extends Controller
         });
 
         return view('admin.dashboard', compact('stats', 'weather'));
+    }
+
+    // --- BARU: METHOD EXPORT PDF ---
+    public function exportReport()
+    {
+        // 1. Ambil data yang mau dicetak
+        $data = [
+            'users' => User::all(),
+            'products' => Product::with('user')->get(),
+            'date' => date('d-m-Y')
+        ];
+
+        // 2. Load View khusus PDF (pastikan file view admin/report_pdf.blade.php sudah dibuat)
+        $pdf = Pdf::loadView('admin.report_pdf', $data);
+
+        // 3. Download file
+        return $pdf->download('laporan-admin-fjb.pdf');
     }
 
     // --- 2. USER MANAGEMENT ---

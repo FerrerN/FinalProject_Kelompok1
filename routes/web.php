@@ -32,7 +32,7 @@ Route::middleware('guest')->group(function () {
 
 // --- 3. MEMBER AREA (SUDAH LOGIN) ---
 Route::middleware('auth')->group(function () {
-    
+
     // LOGOUT
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
 
     // H. KHUSUS ADMIN (Dari Branch Main)
     Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-        
+
         // Dashboard Home
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
@@ -98,6 +98,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/products/{product}/edit', [AdminController::class, 'editProduct'])->name('admin.products.edit');
         Route::put('/products/{product}', [AdminController::class, 'updateProduct'])->name('admin.products.update');
         Route::delete('/products/{product}', [AdminController::class, 'destroyProduct'])->name('admin.products.destroy');
+
+        Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+    // ... route admin lainnya ...
+
+    // Tambahkan Route Export ini:
+    Route::get('/export-report', [App\Http\Controllers\AdminController::class, 'exportReport'])->name('admin.export_report');
+            });
     });
 
     // I. DETAIL PRODUK (Wajib paling bawah dalam grup auth/umum)
@@ -108,11 +115,11 @@ Route::middleware('auth')->group(function () {
 // --- 4. API ROUTES (Dari Branch Jabir) ---
 // Ditaruh di luar group 'auth' utama web, karena punya middleware auth sendiri di dalamnya jika perlu
 Route::prefix('api')->group(function () {
-    
+
     // Public API
     Route::get('/forums', [ForumController::class, 'index']);
     Route::get('/forums/{id}', [ForumController::class, 'show']);
-    
+
     // Private API
     Route::middleware('auth')->group(function () {
         Route::post('/forums', [ForumController::class, 'store']);
