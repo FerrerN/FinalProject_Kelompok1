@@ -16,7 +16,9 @@ use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
+    // =========================================================================
     // 1. DAFTAR TRANSAKSI
+    // =========================================================================
     public function index()
     {
         $user = Auth::user();
@@ -34,21 +36,22 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions'));
     }
 
-    // 2. FORM BELI LANGSUNG
+    // =========================================================================
+    // 2. FORM BELI LANGSUNG (Direct Buy)
+    // =========================================================================
     public function create()
     {
         $products = Product::where('status', 'aktif')->get();
         return view('transactions.create', compact('products'));
     }
 
-    // Proses Simpan Transaksi Beli Langsung
     public function store(Request $request)
     {
         // A. Validasi Input
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
-            'shipping_date' => 'required|date',
+            'shipping_date' => 'required|date|after_or_equal:today',
         ]);
 
         $product = Product::findOrFail($request->product_id);
@@ -58,27 +61,12 @@ class TransactionController extends Controller
             return back()->withErrors(['quantity' => 'Stok barang tidak mencukupi!']);
         }
 
-        // B. INTEGRASI API HARI LIBUR (Mode: Peringatan)
-        $holidayNote = "";
-        $year = date('Y', strtotime($request->shipping_date));
-        
-        try {
-            $response = Http::timeout(3)->get("https://api-harilibur.vercel.app/api?year={$year}");
-            
-            if ($response->successful()) {
-                $holidays = $response->json();
-                $selectedDate = date('Y-m-d', strtotime($request->shipping_date));
+        // B. CEK HARI LIBUR (Menggunakan Helper Function agar rapi)
+        $holidayCheck = $this->checkHoliday($request->shipping_date);
 
-                foreach ($holidays as $holiday) {
-                    if ($holiday['holiday_date'] == $selectedDate && $holiday['is_national_holiday']) {
-                        // Jangan di-return error, tapi tambahkan ke catatan
-                        $holidayNote = " [INFO: Estimasi pengiriman jatuh pada hari libur nasional ({$holiday['holiday_name']}). Kemungkinan ada keterlambatan.]";
-                        break; 
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Jika API error, abaikan saja biar transaksi tetap jalan
+        // Jika pengiriman dilarang (misal tanggal merah)
+        if ($holidayCheck['allowed'] === false) {
+            return back()->withErrors(['shipping_date' => $holidayCheck['reason']])->withInput();
         }
 
         // C. Simpan Transaksi ke Database
@@ -89,7 +77,7 @@ class TransactionController extends Controller
             'total_price' => $product->harga * $request->quantity,
             'shipping_date' => $request->shipping_date,
             'status' => 'pending',
-            'notes' => $request->notes . $holidayCheck['note'] 
+            'notes' => $request->notes . " " . $holidayCheck['note'] 
         ]);
 
         // Kurangi Stok & Generate Token Midtrans
@@ -103,25 +91,6 @@ class TransactionController extends Controller
     // =========================================================================
     // 3. FITUR CHECKOUT DARI KERANJANG (CART)
     // =========================================================================
-
-    // [FIX] Menampilkan Halaman Konfirmasi Tanggal untuk Keranjang
-    public function viewCartCheckout()
-    {
-        $userId = Auth::id();
-        $carts = Cart::where('user_id', $userId)->with('product')->get();
-
-        if ($carts->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang Anda kosong.');
-        }
-
-        $totalPayment = 0;
-        foreach ($carts as $cart) {
-            $totalPayment += $cart->product->harga * $cart->quantity;
-        }
-
-        // Return view khusus di folder carts
-        return view('carts.checkout', compact('carts', 'totalPayment'));
-    }
 
     // Proses Simpan Transaksi dari Keranjang (Bulk Checkout)
     public function checkoutCart(Request $request)
@@ -149,6 +118,7 @@ class TransactionController extends Controller
 
         // Loop setiap item keranjang menjadi transaksi terpisah
         foreach ($carts as $cart) {
+            // Cek stok lagi untuk keamanan (concurrency check)
             if ($cart->product->stok < $cart->quantity) {
                 return back()->with('error', "Stok {$cart->product->nama_barang} tidak mencukupi.");
             }
@@ -183,6 +153,7 @@ class TransactionController extends Controller
     {
         $transaction = Transaction::findOrFail($id);
 
+        // Pastikan hanya pemilik produk yang bisa update status
         if ($transaction->product->user_id !== Auth::id()) {
             abort(403, 'Anda tidak berhak mengubah pesanan ini.');
         }
@@ -215,7 +186,7 @@ class TransactionController extends Controller
     {
         $transaction = Transaction::with(['user', 'product'])->findOrFail($id);
         
-        // Load view PDF (pastikan view ini ada)
+        // Pastikan view 'transactions.invoice' ada
         $pdf = Pdf::loadView('transactions.invoice', compact('transaction'));
         return $pdf->download('invoice-'.$transaction->id.'.pdf');
     }
@@ -230,24 +201,6 @@ class TransactionController extends Controller
     // 5. API & HELPER FUNCTIONS
     // =========================================================================
 
-    // API Publik untuk Cek Ketersediaan Tanggal (AJAX Frontend)
-    public function checkDateAvailability(Request $request)
-    {
-        $date = $request->query('date');
-        
-        if (!$date) {
-            return response()->json(['status' => 'error', 'message' => 'Tanggal wajib diisi']);
-        }
-
-        $check = $this->checkHoliday($date);
-        
-        return response()->json([
-            'status' => $check['allowed'] ? 'available' : 'unavailable',
-            'message' => $check['allowed'] ? ($check['note'] ?: 'Pengiriman tersedia') : $check['reason'],
-            'note' => $check['note']
-        ]);
-    }
-
     // Helper: Logika Deteksi Hari Libur (API External)
     private function checkHoliday($dateInput)
     {
@@ -261,8 +214,8 @@ class TransactionController extends Controller
         $year = Carbon::parse($dateInput)->format('Y');
         
         try {
-            // Timeout 5 detik untuk menghindari loading lama
-            $response = Http::timeout(5)->get("https://api-harilibur.vercel.app/api?year={$year}");
+            // Timeout 2 detik agar tidak terlalu lama
+            $response = Http::timeout(2)->get("https://api-harilibur.vercel.app/api?year={$year}");
             
             if ($response->successful()) {
                 $holidays = $response->json();
@@ -273,8 +226,8 @@ class TransactionController extends Controller
                     // LOGIKA 1: Cek Tanggal Merah (Block)
                     if ($holiday['holiday_date'] === $inputDateStr) {
                         $result['allowed'] = false;
-                        $result['reason'] = "PENGIRIMAN DITUTUP: {$holiday['holiday_name']}";
-                        return $result; 
+                        $result['reason'] = "Pengiriman tidak tersedia pada hari libur nasional: {$holiday['holiday_name']}";
+                        return $result; // Langsung return jika dilarang
                     }
 
                     // LOGIKA 2: Cek H-3 (Warning)
@@ -282,21 +235,14 @@ class TransactionController extends Controller
                     $shippingDate = Carbon::parse($inputDateStr);
                     $diff = $shippingDate->diffInDays($holidayDate, false);
 
-                    if ($diff == 3) {
-                        $result['note'] .= " [INFO TRAFFIC: H-3 sebelum Libur {$holiday['holiday_name']}.]";
+                    if ($diff > 0 && $diff <= 3) {
+                        $result['note'] .= " [INFO: H-{$diff} sebelum Libur {$holiday['holiday_name']}, mungkin ada keterlambatan.]";
                     }
                 }
             }
         } catch (\Exception $e) {
-            // Fallback Manual jika API Down (Agar demo tetap jalan)
-            $manualHolidays = [
-                '2025-12-25' => 'Hari Natal',
-                '2025-01-01' => 'Tahun Baru Masehi',
-            ];
-            if (array_key_exists($inputDateStr, $manualHolidays)) {
-                $result['allowed'] = false;
-                $result['reason'] = "PENGIRIMAN DITUTUP (OFFLINE): " . $manualHolidays[$inputDateStr];
-            }
+            // Jika API error, kita biarkan allowed=true tapi beri catatan (Silent Fail)
+            // Opsional: block tanggal tertentu secara manual jika perlu
         }
 
         return $result;
@@ -305,6 +251,11 @@ class TransactionController extends Controller
     // Helper: Generate Token Midtrans
     private function generateMidtransToken($transaction)
     {
+        // Pastikan setting MIDTRANS di .env sudah benar
+        if (!env('MIDTRANS_SERVER_KEY')) {
+            return; // Skip jika belum setup env
+        }
+
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         Config::$isSanitized = true;
@@ -334,7 +285,7 @@ class TransactionController extends Controller
             $transaction->snap_token = $snapToken;
             $transaction->save();
         } catch (\Exception $e) {
-            // Abaikan error midtrans jika config belum lengkap
+            // Log error jika perlu
         }
     }
 }

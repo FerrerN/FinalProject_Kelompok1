@@ -76,7 +76,7 @@
                                         <small class="text-muted">Qty: {{ $cart->quantity }}</small>
                                     </div>
 
-                                    <form action="{{ route('carts.destroy', $cart->id) }}" method="POST">
+                                    <form action="{{ route('cart.destroy', $cart->id) }}" method="POST">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-light text-danger btn-sm rounded-circle p-2" title="Hapus">
                                             <i class="bi bi-trash-fill"></i>
