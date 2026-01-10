@@ -233,7 +233,7 @@
             </div>
 
             @auth @if(Auth::user()->role == 'penjual')
-                {{-- [BARU] Tombol Shortcut untuk Penjual --}}
+                {{-- Tombol Shortcut untuk Penjual --}}
                 <div class="d-flex gap-2">
                     <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
                         <i class="bi bi-receipt"></i> Cek Pesanan
@@ -283,7 +283,7 @@
 
                                     @auth
                                         @if(Auth::user()->id !== $product->user_id)
-                                            {{-- [PERBAIKAN UTAMA] SPLIT TOMBOL JADI 2 (KERANJANG & BELI LANGSUNG) --}}
+                                            {{-- SPLIT TOMBOL JADI 2 (KERANJANG & BELI LANGSUNG) --}}
                                             <div class="d-flex gap-2">
                                                 
                                                 {{-- 1. Tombol Tambah ke Keranjang (Outline) --}}

@@ -21,7 +21,6 @@ class Transaction extends Model
     ];
 
     // 2. DEFINISI RELASI (Agar tidak error saat menampilkan tabel)
-    
     // Relasi ke User (Pembeli)
     public function user()
     {
@@ -34,7 +33,8 @@ class Transaction extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function review() {
-    return $this->hasOne(Review::class);
+    public function review() 
+    {
+        return $this->hasOne(Review::class);
     }
 }

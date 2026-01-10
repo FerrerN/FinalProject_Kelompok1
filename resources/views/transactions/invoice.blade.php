@@ -27,7 +27,7 @@
 
     <div class="no-print" style="margin-bottom: 20px; text-align: right;">
         <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">
-            🖨️ Cetak Invoice
+            Cetak Invoice
         </button>
         <button onclick="window.history.back()" style="padding: 10px 20px; cursor: pointer; background: #ddd; border: none; border-radius: 5px; margin-left: 10px;">
             Kembali

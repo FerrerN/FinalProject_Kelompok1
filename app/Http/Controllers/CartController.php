@@ -12,9 +12,7 @@ use Carbon\Carbon;
 
 class CartController extends Controller
 {
-    // ==========================================
     // 1. TAMPILKAN ISI KERANJANG
-    // ==========================================
     public function index()
     {
         // Ambil data keranjang milik user yang sedang login

@@ -9,7 +9,11 @@ class Cart extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'product_id', 'quantity'];
+    protected $fillable = [
+        'user_id',
+        'product_id', 
+        'quantity'
+        ];
 
     // Relasi ke Produk (untuk ambil nama/harga/gambar)
     public function product()
