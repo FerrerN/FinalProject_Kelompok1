@@ -180,6 +180,7 @@
             </div>
 
             <div class="col-lg-4">
+                
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-3">
                     <h6 class="fw-bold mb-3 text-uppercase text-muted small">Tentang Penjual</h6>
                     <div class="d-flex align-items-center">
@@ -196,7 +197,7 @@
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-3">
                     <h6 class="fw-bold mb-3 text-uppercase text-muted small">Informasi Stok</h6>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span>Sisa Stok:</span>
@@ -212,6 +213,24 @@
                         <span>Respon Penjual Cepat</span>
                     </div>
                 </div>
+
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                    <h6 class="fw-bold mb-3 text-uppercase text-muted small">
+                        <i class="bi bi-qr-code"></i> Scan Info Produk
+                    </h6>
+                    
+                    <div class="d-flex justify-content-center">
+                        <img src="https://quickchart.io/qr?text={{ urlencode('Produk: ' . $product->nama_barang . ' | Harga: Rp ' . number_format($product->harga,0,',','.')) }}&size=150&margin=1" 
+                             alt="QR Code {{ $product->nama_barang }}" 
+                             class="img-fluid border p-1 rounded"
+                             style="width: 150px; height: 150px;">
+                    </div>
+
+                    <p class="mt-3 mb-0 text-muted" style="font-size: 11px;">
+                        Arahkan kamera HP Anda untuk melihat detail ringkas produk ini.
+                    </p>
+                </div>
+
             </div>
 
         </div>
