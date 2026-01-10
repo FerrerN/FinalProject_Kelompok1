@@ -180,7 +180,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/products/{product}', [AdminController::class, 'destroyProduct'])
             ->name('admin.products.destroy');
 
-        // Laporan (Export Report) - Ditambahkan dari branch main
+        // Laporan (Export Report)
         Route::get('/export-report', [AdminController::class, 'exportReport'])
             ->name('admin.export_report');
     });
