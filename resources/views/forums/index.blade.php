@@ -29,7 +29,6 @@
             background: linear-gradient(45deg, #b91d47, #d63384);
             border: none;
         }
-        /* Style Tambahan untuk Widget API */
         .card-quote {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -58,9 +57,16 @@
                     <h1 class="fw-bold text-dark mb-1">Forum Komunitas</h1>
                     <p class="text-muted m-0 lead">Ruang diskusi, tanya jawab, dan info seputar Telkom University.</p>
                 </div>
-                <a href="{{ route('forums.create') }}" class="btn btn-create-topic text-white rounded-pill px-4 py-3 fw-bold shadow">
-                    <i class="bi bi-plus-lg me-2"></i> Buat Topik Baru
-                </a>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ route('forums.print') }}" target="_blank" class="btn fw-bold px-4 py-3 shadow text-white rounded-pill" style="background-color: #00bfd8; border: none;">
+                        <i class="bi bi-file-earmark-arrow-down me-2"></i> Export Data Forum
+                    </a>
+
+                    <a href="{{ route('forums.create') }}" class="btn btn-create-topic text-white rounded-pill px-4 py-3 fw-bold shadow">
+                        <i class="bi bi-plus-lg me-2"></i> Buat Topik Baru
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -126,12 +132,10 @@
                 @if(isset($quote))
                 <div class="card card-quote border-0 shadow-sm rounded-4 mb-4 position-relative overflow-hidden">
                     <i class="bi bi-quote position-absolute text-white opacity-25" style="font-size: 6rem; top: -20px; right: 10px;"></i>
-                    
                     <div class="card-body p-4 position-relative">
                         <h6 class="fw-bold mb-3 text-white-50 text-uppercase" style="letter-spacing: 1px; font-size: 0.8rem;">
                             <i class="bi bi-stars me-1"></i> Quote of The Day
                         </h6>
-                        
                         <figure class="mb-0">
                             <blockquote class="blockquote">
                                 <p class="fs-5 fw-bold fst-italic">"{{ $quote }}"</p>
@@ -143,6 +147,7 @@
                     </div>
                 </div>
                 @endif
+
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-3"><i class="bi bi-shield-exclamation me-2 text-danger"></i>Aturan Forum</h6>
