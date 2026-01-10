@@ -98,13 +98,43 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui!');
     }
 
-    // 6. HAPUS PRODUK
+    // 6. HAPUS PRODUK (SUDAH DI-MERGE DENGAN FITUR HAPUS GAMBAR)
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        if ($product->user_id !== Auth::id()) abort(403);
+        
+        // Cek Pemilik
+        if ($product->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // --- TAMBAHAN: HAPUS GAMBAR DARI CLOUDINARY ---
+        // Kita cek dulu, apakah produk ini punya gambar?
+        if ($product->url_gambar) {
+            try {
+                // 1. Ambil nama file saja dari URL panjang itu
+                // Contoh URL: https://res.cloudinary.../marketplace_products/ab123.jpg
+                // Hasil basename: ab123.jpg
+                $filename = basename($product->url_gambar);
+
+                // 2. Tentukan lokasinya (Folder + Nama File)
+                // Harus sama persis dengan nama folder waktu kita upload di method store()
+                $path = 'marketplace_products/' . $filename;
+
+                // 3. Perintahkan Storage untuk menghapus
+                Storage::disk('cloudinary')->delete($path);
+
+            } catch (\Exception $e) {
+                // Kalau gagal hapus gambar (misal sudah hilang duluan), biarkan saja.
+                // Jangan sampai error gambar menghalangi penghapusan produk.
+            }
+        }
+        // ------------------------------------------------
+
+        // Hapus data di database
         $product->delete();
-        return redirect()->route('products.index')->with('success', 'Produk dihapus!');
+        
+        return redirect()->route('products.index')->with('success', 'Produk dan gambarnya berhasil dihapus!');
     }
 
     // 7. DETAIL PRODUK
@@ -123,7 +153,7 @@ class ProductController extends Controller
         return view('products.show', compact('product', 'reviewableTransaction'));
     }
 
-    // 8. EXPORT PDF (BAGIAN YANG DIUPDATE)
+    // 8. EXPORT PDF
     public function exportStockReport()
     {
         // Validasi Role
@@ -131,8 +161,6 @@ class ProductController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // KITA TIDAK PAKAI 'with()' KARENA 'kategori' ADALAH KOLOM BIASA DI TABEL PRODUK
-        // Jadi cukup query biasa saja, data kategori otomatis ikut terambil.
         $products = Product::where('user_id', Auth::id())->get();
 
         // Load view PDF
