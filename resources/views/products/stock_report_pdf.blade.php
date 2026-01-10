@@ -10,7 +10,7 @@
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table, th, td { border: 1px solid #333; }
-        th, td { padding: 8px 10px; text-align: left; font-size: 12px; }
+        th, td { padding: 8px 10px; text-align: left; font-size: 12px; vertical-align: middle; }
         th { background-color: #f2f2f2; }
         
         .text-center { text-align: center; }
@@ -37,24 +37,36 @@
                 <th>Kategori</th>
                 <th class="text-right">Harga (Rp)</th>
                 <th class="text-center">Stok</th>
-                <th>Status</th>
+                <th class="text-center">Status</th>
+                <th class="text-center" width="15%">QR Code</th> 
             </tr>
         </thead>
         <tbody>
             @forelse($products as $index => $product)
             @php
-                // --- LOGIKA PERBAIKAN ---
-                
-                // 1. Ambil Kategori (LANGSUNG DARI KOLOM STRING)
-                // Kita tidak perlu mengecek relasi ->name karena di Model Anda kategori adalah string.
+                // 1. Logika Data Aman
                 $namaKategori = $product->kategori ?? '-';
-
-                // 2. Ambil Nama Produk (Prioritas: nama_barang -> nama -> name)
                 $namaProduk = $product->nama_barang ?? $product->nama ?? $product->name ?? '-';
-
-                // 3. Ambil Harga & Stok
                 $hargaProduk = $product->harga ?? $product->price ?? 0;
                 $stokProduk = $product->stok ?? $product->stock ?? 0;
+
+                // 2. TEKNIK BASE64 (SOLUSI AGAR GAMBAR MUNCUL DI PDF)
+                // Kita download dulu gambarnya via PHP, lalu ubah jadi string base64.
+                // Ini memintas blokir keamanan DomPDF.
+                $qrContent = "Produk: " . $namaProduk . " | Harga: Rp " . $hargaProduk;
+                $qrUrl = "https://quickchart.io/qr?text=" . urlencode($qrContent) . "&size=100";
+                
+                $base64Image = null;
+                try {
+                    // Ambil data gambar dari URL
+                    $imageData = file_get_contents($qrUrl);
+                    if ($imageData !== false) {
+                        // Ubah jadi format base64
+                        $base64Image = 'data:image/png;base64,' . base64_encode($imageData);
+                    }
+                } catch (\Exception $e) {
+                    // Jika internet mati/gagal, biarkan null
+                }
             @endphp
 
             <tr>
@@ -63,24 +75,33 @@
                 <td>{{ $namaKategori }}</td>
                 <td class="text-right">{{ number_format($hargaProduk, 0, ',', '.') }}</td>
                 <td class="text-center">{{ $stokProduk }}</td>
-                <td>
+                
+                <td class="text-center">
                     @if($stokProduk > 0)
                         <span class="badge-success">Tersedia</span>
                     @else
                         <span class="badge-danger">Habis</span>
                     @endif
                 </td>
+
+                <td class="text-center">
+                    @if($base64Image)
+                        <img src="{{ $base64Image }}" alt="QR Code" style="width: 60px; height: 60px;">
+                    @else
+                        <span style="font-size:10px; color:red;">Gagal Load</span>
+                    @endif
+                </td>
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center">Belum ada data produk.</td>
+                <td colspan="7" class="text-center">Belum ada data produk.</td>
             </tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="footer">
-        Dicetak otomatis oleh Sistem FJB Tel-U
+        Dicetak otomatis oleh Sistem FJB Tel-U | Powered by QuickChart API
     </div>
 
 </body>
