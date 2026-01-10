@@ -283,18 +283,34 @@
 
                                     @auth
                                         @if(Auth::user()->id !== $product->user_id)
-                                            <form action="{{ route('cart.add', $product->id) }}" method="POST">
-                                                @csrf
-                                                <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold btn-sm" {{ $product->stok <= 0 ? 'disabled' : '' }}>
-                                                    <i class="bi bi-cart-plus me-1"></i> + Keranjang
-                                                </button>
-                                            </form>
+                                            {{-- [PERBAIKAN UTAMA] SPLIT TOMBOL JADI 2 (KERANJANG & BELI LANGSUNG) --}}
+                                            <div class="d-flex gap-2">
+                                                
+                                                {{-- 1. Tombol Tambah ke Keranjang (Outline) --}}
+                                                <form action="{{ route('cart.add', $product->id) }}" method="POST" class="flex-fill">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-outline-danger w-100 rounded-pill fw-bold btn-sm" title="Tambah ke Keranjang" {{ $product->stok <= 0 ? 'disabled' : '' }}>
+                                                        <i class="bi bi-cart-plus"></i>
+                                                    </button>
+                                                </form>
+
+                                                {{-- 2. Tombol Beli Langsung (Solid) - Mengirim Product ID ke Halaman Create --}}
+                                                {{-- Ini kuncinya: parameter ['product_id' => $product->id] --}}
+                                                <a href="{{ route('transactions.create', ['product_id' => $product->id]) }}" 
+                                                   class="btn btn-danger flex-fill rounded-pill fw-bold btn-sm {{ $product->stok <= 0 ? 'disabled' : '' }}">
+                                                    Beli
+                                                </a>
+
+                                            </div>
+
                                         @else
+                                            {{-- Jika user adalah pemilik produk, tampilkan tombol edit --}}
                                             <a href="{{ route('products.edit', $product->id) }}" class="btn btn-outline-secondary w-100 rounded-pill fw-bold btn-sm">
                                                 <i class="bi bi-pencil me-1"></i> Edit
                                             </a>
                                         @endif
                                     @else
+                                        {{-- Jika belum login --}}
                                         <a href="{{ route('login') }}" class="btn btn-outline-danger w-100 rounded-pill fw-bold btn-sm">Login Beli</a>
                                     @endauth
                                 </div>

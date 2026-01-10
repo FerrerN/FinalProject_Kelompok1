@@ -16,9 +16,7 @@ use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
-    // =========================================================================
     // 1. DAFTAR TRANSAKSI
-    // =========================================================================
     public function index()
     {
         $user = Auth::user();
@@ -36,18 +34,24 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions'));
     }
 
-    // =========================================================================
-    // 2. FORM BELI LANGSUNG (Direct Buy)
-    // =========================================================================
-    public function create()
+    // 2. FORM BELI LANGSUNG (Updated)
+    public function create(Request $request)
     {
+        // 1. Ambil data produk semua (untuk jaga-jaga)
         $products = Product::where('status', 'aktif')->get();
-        return view('transactions.create', compact('products'));
+        
+        // 2. Cek apakah ada parameter 'product_id' dari URL?
+        $selectedProduct = null;
+        if ($request->has('product_id')) {
+            $selectedProduct = Product::find($request->product_id);
+        }
+
+        return view('transactions.create', compact('products', 'selectedProduct'));
     }
 
     public function store(Request $request)
     {
-        // A. Validasi Input
+        // Validasi Input
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
@@ -61,15 +65,18 @@ class TransactionController extends Controller
             return back()->withErrors(['quantity' => 'Stok barang tidak mencukupi!']);
         }
 
-        // B. CEK HARI LIBUR (Menggunakan Helper Function agar rapi)
+        // --- [LOGIKA UTAMA] CEK API HARI LIBUR ---
         $holidayCheck = $this->checkHoliday($request->shipping_date);
 
-        // Jika pengiriman dilarang (misal tanggal merah)
+        // JIKA TANGGAL MERAH -> TOLAK PESANAN
         if ($holidayCheck['allowed'] === false) {
-            return back()->withErrors(['shipping_date' => $holidayCheck['reason']])->withInput();
+            // Kembali ke form dengan pesan error
+            return back()
+                ->withErrors(['shipping_date' => $holidayCheck['reason']])
+                ->withInput(); 
         }
 
-        // C. Simpan Transaksi ke Database
+        // Jika lolos, simpan transaksi
         $transaction = Transaction::create([
             'user_id' => Auth::id(),
             'product_id' => $product->id,
@@ -80,7 +87,6 @@ class TransactionController extends Controller
             'notes' => $request->notes . " " . $holidayCheck['note'] 
         ]);
 
-        // Kurangi Stok & Generate Token Midtrans
         $product->decrement('stok', $request->quantity);
         $this->generateMidtransToken($transaction);
 
@@ -88,11 +94,28 @@ class TransactionController extends Controller
             ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
     }
 
-    // =========================================================================
-    // 3. FITUR CHECKOUT DARI KERANJANG (CART)
-    // =========================================================================
+    // 3. CHECKOUT KERANJANG
+    // A. TAMPILKAN HALAMAN CHECKOUT (Review Order)
+    public function checkoutPage()
+    {
+        $userId = Auth::id();
+        // Ambil semua item di keranjang user
+        $carts = Cart::where('user_id', $userId)->with(['product.user'])->get();
 
-    // Proses Simpan Transaksi dari Keranjang (Bulk Checkout)
+        if ($carts->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Keranjang Anda kosong.');
+        }
+
+        // Hitung Total Harga Keseluruhan
+        $grandTotal = 0;
+        foreach($carts as $cart) {
+            $grandTotal += $cart->product->harga * $cart->quantity;
+        }
+
+        return view('transactions.checkout', compact('carts', 'grandTotal'));
+    }
+
+    // B. PROSES SIMPAN TRANSAKSI (BULK)
     public function checkoutCart(Request $request)
     {
         $userId = Auth::id();
@@ -102,64 +125,64 @@ class TransactionController extends Controller
             return back()->with('error', 'Keranjang Anda kosong.');
         }
 
-        // Validasi Tanggal Pengiriman
+        // 1. Validasi Tanggal
         $request->validate([
             'shipping_date' => 'required|date|after_or_equal:today',
         ], [
-            'shipping_date.required' => 'Mohon pilih tanggal pengiriman terlebih dahulu.'
+            'shipping_date.required' => 'Mohon pilih tanggal pengiriman.'
         ]);
 
-        // Cek Hari Libur
+        // 2. Cek API Hari Libur
         $holidayCheck = $this->checkHoliday($request->shipping_date);
-
+        
+        // Jika Tanggal Merah -> Tolak
         if ($holidayCheck['allowed'] === false) {
-            return back()->with('error', $holidayCheck['reason'])->withInput();
+            return back()->withErrors(['shipping_date' => $holidayCheck['reason']])->withInput();
         }
 
-        // Loop setiap item keranjang menjadi transaksi terpisah
+        // 3. Loop Item Keranjang & Simpan Transaksi
         foreach ($carts as $cart) {
-            // Cek stok lagi untuk keamanan (concurrency check)
+            // Cek Stok per item
             if ($cart->product->stok < $cart->quantity) {
                 return back()->with('error', "Stok {$cart->product->nama_barang} tidak mencukupi.");
             }
 
+            // Buat Transaksi
             $transaction = Transaction::create([
                 'user_id' => $userId,
                 'product_id' => $cart->product_id,
                 'quantity' => $cart->quantity,
                 'total_price' => $cart->product->harga * $cart->quantity,
-                'shipping_date' => $request->shipping_date,
+                'shipping_date' => $request->shipping_date, // Tanggal sama untuk semua
                 'status' => 'pending',
                 'notes' => "Checkout Keranjang. " . $request->notes . " " . $holidayCheck['note'],
             ]);
 
+            // Kurangi Stok
             $cart->product->decrement('stok', $cart->quantity);
+            
+            // Generate Token Midtrans (Per transaksi)
             $this->generateMidtransToken($transaction);
         }
 
-        // Kosongkan Keranjang setelah sukses
+        // 4. Kosongkan Keranjang
         Cart::where('user_id', $userId)->delete();
 
         return redirect()->route('transactions.index')
-            ->with('success', 'Checkout Keranjang Berhasil! Silakan bayar pesanan Anda.');
+            ->with('success', 'Checkout Berhasil! Silakan lakukan pembayaran untuk setiap item.');
     }
 
-    // =========================================================================
-    // 4. MANAJEMEN TRANSAKSI (UPDATE & DELETE)
-    // =========================================================================
-
-    // Update Status (Khusus Penjual)
+    // 4. UPDATE & DELETE
     public function update(Request $request, $id)
     {
         $transaction = Transaction::findOrFail($id);
 
-        // Pastikan hanya pemilik produk yang bisa update status
         if ($transaction->product->user_id !== Auth::id()) {
             abort(403, 'Anda tidak berhak mengubah pesanan ini.');
         }
 
         $request->validate([
-            'status' => 'required|in:paid,sent,completed,cancelled'
+            'status' => 'required|in:paid,sent,completed,cancelled,pending'
         ]);
 
         $transaction->update(['status' => $request->status]);
@@ -167,12 +190,10 @@ class TransactionController extends Controller
         return back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
 
-    // Hapus Transaksi / Batalkan Pesanan
     public function destroy($id)
     {
         $transaction = Transaction::findOrFail($id);
         
-        // Kembalikan stok jika pesanan belum selesai/dikirim
         if ($transaction->status != 'completed' && $transaction->status != 'sent') {
             $transaction->product->increment('stok', $transaction->quantity ?? 1);
         }
@@ -181,12 +202,10 @@ class TransactionController extends Controller
         return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus.');
     }
 
-    // Export Invoice PDF
+    // 5. INVOICE
     public function exportInvoice($id)
     {
         $transaction = Transaction::with(['user', 'product'])->findOrFail($id);
-        
-        // Pastikan view 'transactions.invoice' ada
         $pdf = Pdf::loadView('transactions.invoice', compact('transaction'));
         return $pdf->download('invoice-'.$transaction->id.'.pdf');
     }
@@ -198,10 +217,8 @@ class TransactionController extends Controller
     }
 
     // =========================================================================
-    // 5. API & HELPER FUNCTIONS
+    // 6. HELPER: CEK API HARI LIBUR (BLOCKING MODE)
     // =========================================================================
-
-    // Helper: Logika Deteksi Hari Libur (API External)
     private function checkHoliday($dateInput)
     {
         $result = [
@@ -214,46 +231,48 @@ class TransactionController extends Controller
         $year = Carbon::parse($dateInput)->format('Y');
         
         try {
-            // Timeout 2 detik agar tidak terlalu lama
-            $response = Http::timeout(2)->get("https://api-harilibur.vercel.app/api?year={$year}");
+            // Panggil API dengan timeout 5 detik
+            $response = Http::withoutVerifying()
+                ->timeout(5) 
+                ->get("https://api-harilibur.vercel.app/api?year={$year}");
             
             if ($response->successful()) {
                 $holidays = $response->json();
                 
                 foreach ($holidays as $holiday) {
+                    // Hanya proses hari libur nasional
                     if (!$holiday['is_national_holiday']) continue;
 
-                    // LOGIKA 1: Cek Tanggal Merah (Block)
+                    // LOGIKA 1: BLOCK JIKA TANGGAL MERAH
+                    // Jika tanggal input SAMA PERSIS dengan tanggal merah -> BLOKIR
                     if ($holiday['holiday_date'] === $inputDateStr) {
                         $result['allowed'] = false;
-                        $result['reason'] = "Pengiriman tidak tersedia pada hari libur nasional: {$holiday['holiday_name']}";
-                        return $result; // Langsung return jika dilarang
+                        $result['reason'] = "MAAF, PENGIRIMAN LIBUR: {$holiday['holiday_name']}";
+                        return $result; // Langsung stop dan kembalikan status DITOLAK
                     }
 
-                    // LOGIKA 2: Cek H-3 (Warning)
+                    // LOGIKA 2: WARNING JIKA H-3
                     $holidayDate = Carbon::parse($holiday['holiday_date']);
                     $shippingDate = Carbon::parse($inputDateStr);
                     $diff = $shippingDate->diffInDays($holidayDate, false);
 
                     if ($diff > 0 && $diff <= 3) {
-                        $result['note'] .= " [INFO: H-{$diff} sebelum Libur {$holiday['holiday_name']}, mungkin ada keterlambatan.]";
+                        $result['note'] .= " [INFO: Pengiriman mungkin terlambat karena H-{$diff} libur {$holiday['holiday_name']}]";
                     }
                 }
             }
         } catch (\Exception $e) {
-            // Jika API error, kita biarkan allowed=true tapi beri catatan (Silent Fail)
-            // Opsional: block tanggal tertentu secara manual jika perlu
+            // Silent Fail: Jika API mati, biarkan tetap bisa checkout
         }
 
         return $result;
     }
 
-    // Helper: Generate Token Midtrans
+    // Helper: Midtrans
     private function generateMidtransToken($transaction)
     {
-        // Pastikan setting MIDTRANS di .env sudah benar
         if (!env('MIDTRANS_SERVER_KEY')) {
-            return; // Skip jika belum setup env
+            return; 
         }
 
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
@@ -285,7 +304,6 @@ class TransactionController extends Controller
             $transaction->snap_token = $snapToken;
             $transaction->save();
         } catch (\Exception $e) {
-            // Log error jika perlu
         }
     }
 }
