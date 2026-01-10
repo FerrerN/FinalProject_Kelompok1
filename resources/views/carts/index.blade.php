@@ -76,7 +76,7 @@
                                         <small class="text-muted">Qty: {{ $cart->quantity }}</small>
                                     </div>
 
-                                    <form action="{{ route('carts.destroy', $cart->id) }}" method="POST">
+                                    <form action="{{ route('cart.destroy', $cart->id) }}" method="POST">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-light text-danger btn-sm rounded-circle p-2" title="Hapus">
                                             <i class="bi bi-trash-fill"></i>
@@ -134,16 +134,21 @@
                             </div>
                         @endif
                     </div>
-                    <form action="{{ route('checkout.process') }}" method="POST"> 
-                        @csrf
-                        <input type="hidden" name="shipping_date" value="{{ $estimasi->format('Y-m-d') }}">
-                        
-                        <button type="submit" class="btn btn-danger w-100 py-3 fw-bold rounded-pill shadow-sm" 
-                            {{ $carts->isEmpty() ? 'disabled' : '' }}>
-                            <i class="bi bi-lock-fill me-2"></i> Checkout Sekarang
-                        </button>
-                    </form>
-
+                    <div class="card border-0 shadow-sm rounded-4 mt-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="fw-bold mb-0">Total Keranjang</h5>
+                                <small class="text-muted">Belum termasuk ongkir</small>
+                            </div>
+                            
+                            {{-- TOMBOL MENUJU HALAMAN CHECKOUT BARU --}}
+                            <a href="{{ route('transactions.checkout_page') }}" class="btn btn-danger px-5 py-2 rounded-pill fw-bold">
+                                Checkout Sekarang
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>

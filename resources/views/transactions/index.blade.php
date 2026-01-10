@@ -94,42 +94,58 @@
                                         </td>
                                         <td>
                                             @php
+                                                // Logika warna badge berdasarkan status bahasa Inggris
                                                 $badges = [
-                                                    'pending' => 'bg-warning text-dark bg-opacity-25',
-                                                    'dikirim' => 'bg-info text-dark bg-opacity-25',
-                                                    'selesai' => 'bg-success text-success bg-opacity-10',
-                                                    'batal'   => 'bg-danger text-danger bg-opacity-10',
+                                                    'pending'   => 'bg-warning text-dark bg-opacity-25',
+                                                    'paid'      => 'bg-primary text-white',
+                                                    'sent'      => 'bg-info text-dark bg-opacity-25',
+                                                    'completed' => 'bg-success text-success bg-opacity-10',
+                                                    'cancelled' => 'bg-danger text-danger bg-opacity-10',
                                                 ];
                                                 $class = $badges[$trx->status] ?? 'bg-secondary';
+                                                
+                                                // Logika teks tampilan (Translate ke Indo)
+                                                $labels = [
+                                                    'pending'   => 'Pending',
+                                                    'paid'      => 'Dibayar',
+                                                    'sent'      => 'Dikirim',
+                                                    'completed' => 'Selesai',
+                                                    'cancelled' => 'Batal'
+                                                ];
+                                                $text = $labels[$trx->status] ?? $trx->status;
                                             @endphp
                                             <span class="status-badge {{ $class }} text-uppercase">
-                                                {{ $trx->status }}
+                                                {{ $text }}
                                             </span>
                                         </td>
                                         
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center align-items-center gap-2">
                                                 
-                                                {{-- 1. TOMBOL CETAK INVOICE --}}
+                                                {{-- 1. TOMBOL CETAK INVOICE (Untuk Semua) --}}
                                                 <a href="{{ route('transactions.print', $trx->id) }}" target="_blank" class="btn-icon text-dark" title="Cetak Invoice">
                                                     <i class="bi bi-printer"></i>
                                                 </a>
 
-                                                {{-- 2. DROPDOWN STATUS (KHUSUS PENJUAL) --}}
+                                                {{-- 2. DROPDOWN STATUS (HANYA MUNCUL JIKA USER ADALAH PENJUAL) --}}
                                                 @if(Auth::user()->role == 'penjual')
                                                     <form action="{{ route('transactions.update', $trx->id) }}" method="POST" class="d-inline">
-                                                        @csrf @method('PUT')
-                                                        <select name="status" class="form-select form-select-sm border-secondary" style="width: 100px;" onchange="this.form.submit()">
-                                                            <option value="pending" {{ $trx->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                                            <option value="dikirim" {{ $trx->status == 'dikirim' ? 'selected' : '' }}>Dikirim</option>
-                                                            <option value="selesai" {{ $trx->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                                                            <option value="batal"   {{ $trx->status == 'batal' ? 'selected' : '' }}>Batal</option>
+                                                        @csrf 
+                                                        @method('PUT')
+                                                        
+                                                        <select name="status" class="form-select form-select-sm border-secondary" style="width: 110px;" onchange="this.form.submit()">
+                                                            {{-- Value = Bahasa Inggris (Database), Teks = Bahasa Indonesia (Tampilan) --}}
+                                                            <option value="pending"   {{ $trx->status == 'pending'   ? 'selected' : '' }}>Pending</option>
+                                                            <option value="sent"      {{ $trx->status == 'sent'      ? 'selected' : '' }}>Dikirim</option>
+                                                            <option value="completed" {{ $trx->status == 'completed' ? 'selected' : '' }}>Selesai</option>
+                                                            <option value="cancelled" {{ $trx->status == 'cancelled' ? 'selected' : '' }}>Batal</option>
                                                         </select>
                                                     </form>
                                                 @endif
 
-                                                {{-- 3. TOMBOL HAPUS (MUNCUL JIKA PENDING / BATAL) --}}
-                                                @if($trx->status == 'pending' || $trx->status == 'batal')
+                                                {{-- 3. TOMBOL HAPUS (Muncul jika status Pending/Batal/Selesai) --}}
+                                                {{-- Penjual bisa hapus kapan saja yg pending/batal, Pembeli hanya jika batal --}}
+                                                @if($trx->status == 'pending' || $trx->status == 'cancelled')
                                                     <form action="{{ route('transactions.destroy', $trx->id) }}" method="POST" onsubmit="return confirm('Yakin hapus transaksi ini?');">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="btn-icon text-danger border-0 bg-transparent" title="Hapus">
@@ -139,7 +155,7 @@
                                                 @endif
 
                                                 {{-- 4. TOMBOL BERI ULASAN (KHUSUS PEMBELI & STATUS SELESAI) --}}
-                                                @if(Auth::user()->role == 'pembeli' && $trx->status == 'selesai')
+                                                @if(Auth::user()->role == 'pembeli' && $trx->status == 'completed')
                                                     <a href="{{ route('reviews.create', $trx->id) }}" class="btn-icon text-warning" title="Beri Ulasan">
                                                         <i class="bi bi-star-fill"></i>
                                                     </a>
