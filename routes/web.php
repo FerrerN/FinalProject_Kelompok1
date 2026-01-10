@@ -43,8 +43,9 @@ Route::middleware('auth')->group(function () {
     // B. FITUR KERANJANG
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add/{id}', [CartController::class, 'addToCart'])->name('cart.add');
-    Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('carts.destroy');
-    Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    
+    // [FIX ERROR] Route Delete Keranjang (Singular Name: cart.destroy)
+    Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
 
     // C. TRANSAKSI & INVOICE
     Route::resource('transactions', TransactionController::class);

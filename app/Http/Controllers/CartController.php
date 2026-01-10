@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
-use App\Models\Product;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\Http; // Untuk API Libur (Tetap dipakai)
-use Carbon\Carbon;                   // Untuk Tanggal
-
+use Illuminate\Support\Facades\Http; 
+use Carbon\Carbon;
 
 class CartController extends Controller
 {
@@ -24,7 +22,8 @@ class CartController extends Controller
             $total += $cart->product->harga * $cart->quantity;
         }
 
-        // --- API HARI LIBUR GRATIS (TETAP ADA) ---
+        // Info Libur (Hanya untuk estimasi visual, bukan validasi checkout)
+        // Validasi checkout yang ketat ada di TransactionController
         $estimasi = Carbon::now()->addDays(3); 
         $tanggalCek = $estimasi->format('Y-m-d');
         $tahun = $estimasi->format('Y');
@@ -52,11 +51,20 @@ class CartController extends Controller
     public function addToCart(Request $request, $productId)
     {
         $product = Product::findOrFail($productId);
+        
+        // Cek stok
+        if ($product->stok < 1) {
+            return back()->with('error', 'Stok habis!');
+        }
+
         $existingCart = Cart::where('user_id', Auth::id())
                             ->where('product_id', $productId)
                             ->first();
 
         if ($existingCart) {
+            if ($product->stok < ($existingCart->quantity + 1)) {
+                return back()->with('error', 'Stok tidak mencukupi!');
+            }
             $existingCart->quantity += 1;
             $existingCart->save();
         } else {
@@ -86,36 +94,6 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Keranjang masih kosong!');
         }
 
-        // Ambil Tanggal dari Input view atau Default H+3
-        $shippingDate = $request->input('shipping_date', now()->addDays(3));
-
-        foreach ($carts as $cart) {
-            
-            // Cek Stok
-            if ($cart->product->stok < $cart->quantity) {
-                return back()->withErrors(['error' => 'Stok ' . $cart->product->nama_barang . ' habis!']);
-            }
-
-            // Simpan Transaksi
-            Transaction::create([
-                'user_id'       => Auth::id(),
-                'product_id'    => $cart->product_id,
-                'quantity'      => $cart->quantity,
-                'shipping_date' => $shippingDate,
-                'total_price'   => $cart->product->harga * $cart->quantity,
-                'status'        => 'pending', // Status awal pending, nanti diupdate penjual
-                'notes'         => 'Menunggu Pembayaran Manual'
-            ]);
-            
-            // (KODE MIDTRANS SUDAH DIHAPUS DISINI)
-
-            // Kurangi Stok
-            $cart->product->decrement('stok', $cart->quantity);
-        }
-
-        // Kosongkan Keranjang
-        Cart::where('user_id', Auth::id())->delete();
-
-        return redirect()->route('transactions.index')->with('success', 'Checkout berhasil! Silakan hubungi penjual untuk pembayaran.');
+        return back()->with('error', 'Item tidak ditemukan atau akses ditolak.');
     }
 }
