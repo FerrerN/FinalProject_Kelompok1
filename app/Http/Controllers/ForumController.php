@@ -183,4 +183,12 @@ class ForumController extends Controller
 
         return back()->with('success', 'Balasan terkirim!');
     }
+    public function print()
+{
+    // Mengambil data forum
+    $forums = \App\Models\Forum::with('user')->latest()->get();
+    
+    // Mengarahkan ke file resources/views/forums/print.blade.php
+    return view('forums.print', compact('forums'));
+}
 }
