@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Http; 
@@ -111,6 +112,22 @@ class ReviewController extends Controller
         return redirect()->route('products.show', $productId)
                 ->with('success', 'Ulasan berhasil dihapus.');
     }
+
+    // 6. Export PDF
+    public function exportPdf(Review $review)
+    {
+        // 1. Pastikan user yang download adalah pemilik ulasan (Keamanan)
+        if ($review->user_id !== auth()->id()) {
+            abort(403, 'Anda tidak berhak mengunduh ulasan ini.');
+        }
+
+        // 2. Load View PDF khusus Ulasan
+        $pdf = Pdf::loadView('reviews.pdf', compact('review'));
+
+        // 3. Download file
+        return $pdf->download('Bukti-Ulasan-' . $review->id . '.pdf');
+    }
+
 
     // ==========================================
     // HELPER: API FILTER (SUDAH DIPERBAIKI)
