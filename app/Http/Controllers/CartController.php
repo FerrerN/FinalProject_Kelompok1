@@ -12,9 +12,7 @@ use Carbon\Carbon;
 
 class CartController extends Controller
 {
-    // ==========================================
     // 1. TAMPILKAN ISI KERANJANG
-    // ==========================================
     public function index()
     {
         // Ambil data keranjang milik user yang sedang login
@@ -115,9 +113,5 @@ class CartController extends Controller
 
         return back()->with('success', 'Barang dihapus dari keranjang.');
     }
-
-    // CATATAN PENTING:
-    // Fungsi public function checkout() DIHAPUS.
-    // Alasannya: Proses checkout sekarang ditangani oleh TransactionController 
-    // melalui route 'checkout.process' sesuai perbaikan web.php sebelumnya.
+    
 }
