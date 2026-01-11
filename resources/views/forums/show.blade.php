@@ -12,9 +12,8 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', sans-serif;
-            padding-top: 80px; /* Jarak Navbar */
+            padding-top: 80px;
         }
-        /* Gradient Merah Khas Tel-U */
         .navbar-telu {
             background: linear-gradient(135deg, #b91d47 0%, #ee395f 100%);
         }
@@ -42,8 +41,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-telu fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ route('home') }}">
-                <i class="bi bi-bag-heart-fill me-2"></i> FJB Tel-U
+            <a class="navbar-brand fw-bold" href="{{ route('forums.index') }}"> <i class="bi bi-bag-heart-fill me-2"></i> FJB Tel-U
             </a>
             <div class="ms-auto">
                 <a href="{{ route('forums.index') }}" class="btn btn-outline-light rounded-pill btn-sm px-3 fw-bold">
@@ -86,7 +84,8 @@
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <form action="{{ route('forums.destroy', $forum->id) }}" method="POST" onsubmit="return confirm('Yakin hapus topik ini selamanya?');">
-                                                @csrf @method('DELETE')
+                                                @csrf 
+                                                @method('DELETE')
                                                 <button type="submit" class="dropdown-item py-2 text-danger">
                                                     <i class="bi bi-trash me-2"></i> Hapus Topik
                                                 </button>
@@ -95,7 +94,7 @@
                                     </ul>
                                 </div>
                             @endif
-                        </div>
+                            </div>
 
                         <h2 class="fw-bold text-dark mb-3">{{ $forum->title }}</h2>
                         
@@ -163,48 +162,48 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Fungsi API untuk mengirim balasan
         async function kirimBalasan(forumId, isiKonten) {
             try {
-                const response = await fetch(`/api/forums/${forumId}/reply`, {
+                // Perbaikan URL: Hapus '/api' jika kamu menggunakan Controller Web biasa
+                // Kalau rutenya di web.php, harusnya: /forums/{id}/reply
+                // Tapi kita tambahkan header Accept: application/json supaya Controller tau minta JSON
+                const url = `/forums/${forumId}/reply`; 
+
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        // CSRF Token sangat penting karena ini diletakkan di web.php
+                        'Accept': 'application/json', // PENTING: Supaya Controller pakai $request->wantsJson()
                         'X-CSRF-TOKEN': '{{ csrf_token() }}' 
                     },
                     body: JSON.stringify({ content: isiKonten })
                 });
 
+                // Cek jika status HTTP sukses (200 atau 201)
                 const hasil = await response.json();
                 
                 if (response.ok) {
-                    alert('Komentar berhasil masuk via API!');
+                    // Refresh halaman untuk melihat komentar baru
                     location.reload(); 
                 } else {
                     alert('Gagal mengirim balasan: ' + (hasil.message || 'Terjadi kesalahan'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Tidak dapat terhubung ke server.');
+                // Jika fetch gagal, submit form secara manual (fallback)
+                // document.querySelector('form[action*="reply"]').submit(); 
+                alert('Gagal terhubung ke server.');
             }
         }
 
-        // Integrasi ke Form Balasan yang sudah ada di show.blade.php
         document.querySelector('form[action*="reply"]').addEventListener('submit', function(e) {
-            e.preventDefault(); // Mencegah reload halaman standar
-            
+            e.preventDefault(); 
             const forumId = "{{ $forum->id }}";
             const konten = this.querySelector('textarea[name="content"]').value;
-            
             kirimBalasan(forumId, konten);
         });
     </script>
-</body>
-</html>
 </body>
 </html>
