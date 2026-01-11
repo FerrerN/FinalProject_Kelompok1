@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
     // =======================
     // D. ULASAN (REVIEWS)
     // =======================
+    Route::get('/reviews/{review}/export', [ReviewController::class, 'exportPdf'])->name('reviews.export_pdf');
     Route::get('/reviews/create/{transaction}', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');

@@ -3,6 +3,7 @@
 <head>
     <title>Edit Ulasan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body class="bg-light">
     <div class="container py-5">
@@ -11,7 +12,7 @@
                 <div class="card border-0 shadow rounded-4">
                     <div class="card-header bg-white fw-bold py-3 text-center">Edit Ulasan Anda</div>
                     <div class="card-body p-4 text-center">
-                        <h5 class="fw-bold">{{ $review->product->nama_barang }}</h5>
+                        <h5 class="fw-bold">{{ $review->product->nama_barang ?? 'Nama Produk' }}</h5>
                         <p class="text-muted">Ubah penilaian Anda untuk produk ini.</p>
                         
                         <form action="{{ route('reviews.update', $review->id) }}" method="POST">
@@ -34,8 +35,17 @@
                                 <textarea name="comment" class="form-control" rows="4" required>{{ $review->comment }}</textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-warning w-100 fw-bold">Simpan Perubahan</button>
-                            <a href="{{ route('products.show', $review->product_id) }}" class="btn btn-link text-muted mt-2">Batal</a>
+                            <button type="submit" class="btn btn-warning w-100 fw-bold mb-3">Simpan Perubahan</button>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ route('products.show', $review->product_id) }}" class="btn btn-light text-muted">Batal</a>
+
+                                {{-- TOMBOL EXPORT ULASAN (UPDATED) --}}
+                                {{-- Mengarah ke route reviews.export_pdf --}}
+                                <a href="{{ route('reviews.export_pdf', $review->id) }}" class="btn btn-outline-danger" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf"></i> Export Ulasan
+                                </a>
+                            </div>
                         </form>
                     </div>
                 </div>
