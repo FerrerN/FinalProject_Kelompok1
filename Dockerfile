@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Fix Apache MPM conflict: disable mpm_event and mpm_worker, enable only mpm_prefork
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork
+
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
@@ -56,23 +60,8 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Create the startup script that uses Railway's PORT env var
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-# Use Railway PORT or default to 8080\n\
-PORT=${PORT:-8080}\n\
-\n\
-# Update Apache to listen on the correct port\n\
-sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf\n\
-sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/000-default.conf\n\
-\n\
-php artisan config:cache\n\
-php artisan route:cache\n\
-php artisan view:cache\n\
-php artisan migrate --force\n\
-\n\
-exec apache2-foreground' > /usr/local/bin/start.sh \
-&& chmod +x /usr/local/bin/start.sh
+RUN printf '#!/bin/bash\nset -e\n\n# Use Railway PORT or default to 8080\nPORT=${PORT:-8080}\n\n# Update Apache to listen on the correct port\nsed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf\nsed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/000-default.conf\n\nphp artisan config:cache\nphp artisan route:cache\nphp artisan view:cache\nphp artisan migrate --force\n\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
+    && chmod +x /usr/local/bin/start.sh
 
 EXPOSE 8080
 
