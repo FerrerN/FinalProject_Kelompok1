@@ -1,7 +1,8 @@
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies + nginx
 RUN apt-get update && apt-get install -y \
+    nginx \
     git \
     curl \
     libpng-dev \
@@ -15,26 +16,33 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Fix Apache MPM conflict: forcefully remove ALL mpm modules then enable only mpm_prefork
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.conf \
-          /etc/apache2/mods-enabled/mpm_event.load \
-          /etc/apache2/mods-enabled/mpm_worker.conf \
-          /etc/apache2/mods-enabled/mpm_worker.load \
-          /etc/apache2/mods-enabled/mpm_prefork.conf \
-          /etc/apache2/mods-enabled/mpm_prefork.load \
-    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
-    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
-
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
-
-# Set Apache DocumentRoot to Laravel's public directory
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# Allow .htaccess overrides
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+# Configure nginx for Laravel
+RUN echo 'server {\n\
+    listen __PORT__;\n\
+    root /var/www/html/public;\n\
+    index index.php index.html;\n\
+    charset utf-8;\n\
+\n\
+    location / {\n\
+        try_files $uri $uri/ /index.php?$query_string;\n\
+    }\n\
+\n\
+    location = /favicon.ico { access_log off; log_not_found off; }\n\
+    location = /robots.txt  { access_log off; log_not_found off; }\n\
+\n\
+    error_page 404 /index.php;\n\
+\n\
+    location ~ \.php$ {\n\
+        fastcgi_pass 127.0.0.1:9000;\n\
+        fastcgi_index index.php;\n\
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;\n\
+        include fastcgi_params;\n\
+    }\n\
+\n\
+    location ~ /\.(?!well-known).* {\n\
+        deny all;\n\
+    }\n\
+}' > /etc/nginx/sites-available/default
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -62,41 +70,41 @@ RUN composer dump-autoload --optimize
 RUN npm run build
 
 # Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Create the startup script
+# Create startup script
 RUN printf '#!/bin/bash\n\
 set -e\n\
 \n\
-# Use Railway PORT or default to 8080\n\
 PORT=${PORT:-8080}\n\
 \n\
-# Update Apache to listen on the correct port\n\
-sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf\n\
-sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/000-default.conf\n\
+# Update nginx port\n\
+sed -i "s/__PORT__/${PORT}/g" /etc/nginx/sites-available/default\n\
 \n\
 # Laravel bootstrap\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
-\n\
-# Run migrations\n\
 php artisan migrate --force\n\
 \n\
-# Run seeders only if DB is empty (cek tabel users kosong)\n\
+# Run seeder only if DB is empty\n\
 USER_COUNT=$(php artisan tinker --execute="echo \\App\\Models\\User::count();" 2>/dev/null | tail -1 | tr -d "\\r\\n ")\n\
 if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then\n\
-  echo "Database kosong, menjalankan seeder..."\n\
+  echo "[start.sh] Database kosong, menjalankan seeder..."\n\
   php artisan db:seed --force\n\
-  echo "Seeder selesai!"\n\
+  echo "[start.sh] Seeder selesai!"\n\
 else\n\
-  echo "Database sudah ada data ($USER_COUNT users), skip seeder."\n\
+  echo "[start.sh] Database sudah ada $USER_COUNT user, skip seeder."\n\
 fi\n\
 \n\
-exec apache2-foreground\n\
-' > /usr/local/bin/start.sh \
-    && chmod +x /usr/local/bin/start.sh
+# Start PHP-FPM in background\n\
+php-fpm -D\n\
+\n\
+# Start nginx in foreground\n\
+echo "[start.sh] Starting nginx on port ${PORT}..."\n\
+exec nginx -g "daemon off;"\n\
+' > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
 EXPOSE 8080
 
