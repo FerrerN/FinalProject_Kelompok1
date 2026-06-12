@@ -11,20 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        
-        // TAMBAHKAN BAGIAN INI:
+        // Trust all proxies (wajib untuk Railway, Heroku, dll yang pakai load balancer)
+        $middleware->trustProxies(at: '*');
+
+        // Custom middleware alias
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
-        
-    })
-    ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class, // Pastikan baris ini ada
-        ]);
-    })
-    ->withMiddleware(function (Middleware $middleware) {
-        //
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
